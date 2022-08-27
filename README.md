@@ -6,6 +6,8 @@
  Profesor: [Ignacio Sarmiento](https://github.com/ignaciomsarmiento)
 
  Dentro de este repositorio se encuentra:
+ 
+ El documento pdf describiendo las respuestas completas al Taller 1 del curso de BDML Fall 2022, el cual fue trabajado en el siguiente enlace de overleaf:(https://www.overleaf.com/2457227371jjcqzhyzhrfm)
  ## Data Files
 
  ## Code Files 
