@@ -8,7 +8,8 @@ library (dplyr)
 # llamar la librería pacman: contiene la función p_load()
 require(pacman)
 # p_load llama/instala-llama las librerías que se enlistan: # contiene las librerías ggplot, dplyr...
-p_load(tidyverse,rvest) # web-scraping
+p_load(knitr,kableExtra,here,jtools,ggstance,broom,broom.mixed,skimr)
+p_load(tidyverse,rvest, skimr) # web-scraping
 vignette("rvest")
 
 #Creo una url base sobre la cual pueda iterar el loop del siguiente paso y obtener los datos de cada chunk
@@ -38,7 +39,5 @@ datos_geih<- subset(datos_geih, age >= 18)
 #Como se encuentra en la base, la dirección de la dummy está "al revés" se crea la variable female
 datos_geih$female <- ifelse(datos_geih$sex==0, 1,0)
 #Con la medida de ingreo total imputado ingtotes
-mod = lm(logingtotes ~ female, data = datos_geih, x = TRUE) #No me corre sale un error
-lm_summary = summary(mod)$coefficients
-
+mod3_1 = lm(ingtototes ~ female, data = datos_geih) #No me corre sale un error
 
