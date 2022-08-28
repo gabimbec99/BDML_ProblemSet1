@@ -7,7 +7,7 @@
 
  Dentro de este repositorio se encuentra:
  
- El documento pdf describiendo las respuestas completas al Taller 1 del curso de BDML Fall 2022, el cual fue trabajado en el siguiente enlace de overleaf:(https://www.overleaf.com/6595335978zgsmfxtqjtty)
+ El documento pdf describiendo las respuestas completas al Taller 1 del curso de BDML Fall 2022, el cual fue trabajado en el siguiente enlace de overleaf:(https://www.overleaf.com/8567919536rcvkfqcvpyvg)
  ## Data Files
 
  ## Code Files 
