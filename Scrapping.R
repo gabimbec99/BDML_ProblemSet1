@@ -12,6 +12,8 @@ p_load(knitr,kableExtra,here,jtools,ggstance,broom,broom.mixed,skimr)
 p_load(tidyverse,rvest, skimr) # web-scraping
 vignette("rvest")
 
+install.packages('rlang')
+library('rlang')
 #Creo una url base sobre la cual pueda iterar el loop del siguiente paso y obtener los datos de cada chunk
 url_base <- paste0("https://ignaciomsarmiento.github.io/GEIH2018_sample/pages/geih_page_", 
                    1:10, ".html")
@@ -33,8 +35,7 @@ for (url in url_base){
 }
 
 # revisar si tiene alguna restricción. 
-browseURL("https://en.wikipedia.org/robots.txt")
-
+browseURL("https://ignaciomsarmiento.github.io/GEIH2018%20sample/robots.txt")
 
 # B data cleaning
 
@@ -42,22 +43,87 @@ browseURL("https://en.wikipedia.org/robots.txt")
 #Me quedo con las observaciones de +18
 datos_geih<- subset(datos_geih, age >= 18)
 
+# elegimos las variables que vamos a usar para el problem set: 
+X1=datos_geih[, c('age','oficio','relab','college','cotPension','fweight', 'formal', 'hoursWorkUsual')]
+y1= datos_geih[,"y_total_m_ha"]
+data_punto1 =cbind(y1,X1)
+data_punto1= data.frame(data_punto1)
+
+# limpieza de la base, cambiar las etiquetas y volver las variables factores.
+
+# obtener la tabla de nombres de las variables: 
+
+url2 <- 'https://ignaciomsarmiento.github.io/GEIH2018_sample/labels.html'
+labels <- read_html(url2) %>%
+  html_table()
+#tomo la tabla de uno de todas las tablas presentes
+labels <- as.data.frame(labels)
+
+# extraer los nombres de las variables de oficios: 
+
+
+labelsoficio=labels[labels$Variable == 'oficio',]
+# quitar las comillas de la variable levels
+labelsoficio$level <- gsub('"','',as.character(labelsoficio$level))
+oficios <- labelsoficio[["level"]]
+numoficio <- labelsoficio[["values"]]
+
+#relab
+labelsrelab=labels[labels$Variable == 'relab',]
+labelsrelab$level <- gsub('"','',as.character(labelsrelab$level))
+relab <- labelsrelab[["level"]]
+numrelab <- labelsrelab[["values"]]
+
+# relabel de los oficios
+data_punto1 <- data_punto1 %>% 
+  mutate(oficio = recode(oficio, !!!(set_names(oficios, numoficio)), .default = NA_character_))
+# relabel de los relab
+data_punto1 <- data_punto1 %>% 
+  mutate(relab = recode(relab, !!!(set_names(relab,numrelab)), .default = NA_character_))
+
+
+# otros relab
+data_punto1 <- data_punto1 %>% 
+  mutate(formal = recode(formal, !!!(set_names(c("informal","formal"), 0:1)), .default = NA_character_))
+
+data_punto1 <- data_punto1 %>% 
+  mutate(college = recode(college, !!!(set_names(c("No universidad","Universidad"), 0:1)), .default = NA_character_))
+
+data_punto1 <- data_punto1 %>% 
+  mutate(cotPension = recode(cotPension, !!!(set_names(c("Cotiza","No cotiza","Pensionado"), 1:3)), .default = NA_character_))
+
+
+
+# convertir las variables en factores. 
+variables_chr <- names(select_if(data_punto1, is.character))
+
+for (v in variables_chr) {
+  data_punto1[, v] <- as.factor(data_punto1[, v, drop = T])
+}
+
+glimpse(data_punto1)
+
+datos_geih$formal %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
+datos_geih$oficio %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
+
+# imputacion de las variables omitidas. 
+
+
 
 # ver los missing values 
-is.na(df)
-colSums(is.na(df))
+colSums(is.na(data_punto1))
 
 
-unique(df$cod_ase_)
+
+datos_geih$ingtot %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
+
 df$cod_ase_ <- NULL
-
-df$estrato %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
 
 
 # imputar por 1 el estrato 
 df$estrato[is.na(df$estrato)] <-1
 
-voy a arreglar la edad en dias. 
+# voy a arreglar la edad en dias. 
 
 df$edad_[df$uni_med_==1] == df$edad_[df$uni_med_==1]*365
 df$edad_[df$uni_med_==2] == df$edad_[df$uni_med_==2]*30
