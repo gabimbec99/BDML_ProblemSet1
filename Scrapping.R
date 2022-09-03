@@ -2,6 +2,7 @@
 ## Daniel Lasso, Matteo Rozo y Gabriela Mejía ##
 
 # Punto 1 -------------------------------------------------
+#install.packages("sandwich")
 library(pacman)
 library(rvest, tidyverse)
 library (dplyr)
@@ -96,15 +97,27 @@ scale_x_continuous(n.breaks=10, limits=c(18,87)) +
   xlab("Edad") + ylab("Salario") + theme_bw()
 
 #Punto 3-----------------------------
+
 #Como se encuentra en la base, la dirección de la dummy está "al revés" se crea la variable female
 datos_geih$female <- ifelse(datos_geih$sex==0, 1,0)
+datos_geih$sqage <- datos_geih$age^2
+#Teniendo en cuenta el modelo del inciso anterior se deben crear las interacciones como nuevas variables
+datos_geih$agefemale <- datos_geih$female * datos_geih$age
+datos_geih$sqagefemale <- datos_geih$female * datos_geih$age^2
 
-X=datos_geih[, c('female')]
-y= datos_geih[, "ingtotes"]
+#Modelo y visualización de resultados
+X=datos_geih[, c("female","age","sqage","agefemale", "sqagefemale")]
 data_punto3 =cbind(y,X)
 data_punto3= data.frame(data_punto3)
+skim(data_punto3)
+modelo2 = lm("y ~ female+age+sqage+agefemale+sqagefemale" , data = data_punto3, weights= datos_geih$fweight, x=TRUE) 
+summary(modelo2)
+m2_summary=summary(modelo2)$coefficients
+m2_summary_print = m2_summary
+m2_summary_print[,'t value'] = abs(m2_summary_print[,'t value'])
+kable(m2_summary_print[,c('Estimate', 'Std. Error', 't value','Pr(>|t|)')], digits = 1, col.names = c('Weight', 'SE', "|t|","P-value"), booktabs = TRUE, center = TRUE) %>% kable_styling(position = "center")
+#Sin embargo, es razonable pensar que a la hora de hablar de ingreso o salario, el error será heterocedástico
+summ(modelo2, robust = "HC1")
 
 
-#Con la medida de ingreo total imputado ingtotes
 
-modelo2 = lm("y ~ X" , data = data_punto3) #No me corre sale un error
