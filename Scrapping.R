@@ -67,7 +67,7 @@ df$edad_[df$uni_med_==2] == df$edad_[df$uni_med_==2]*30
 #Punto 2-----------------------------
 
 X=datos_geih[, c('age')]
-y= datos_geih[, "y_salary_m"]
+y= datos_geih[, "y_total_m_ha"]
 data_punto2 =cbind(y,X)
 data_punto2= data.frame(data_punto2)
 
@@ -121,7 +121,8 @@ scale_x_continuous(n.breaks=10, limits=c(18,87)) +
   xlab("Edad") + ylab("Salario") + theme_bw()
 
 #Punto 3-----------------------------
-
+#Buscamos una medida del ingreso salarial que logre capturar dinámicas del mercado laboral, y tenga pocas distorsiones frente
+#a por ejemplo, la cantidad de horas que se trabajan
 #Como se encuentra en la base, la dirección de la dummy está "al revés" se crea la variable female
 datos_geih$female <- ifelse(datos_geih$sex==0, 1,0)
 datos_geih$sqage <- datos_geih$age^2
