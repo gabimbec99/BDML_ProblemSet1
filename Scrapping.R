@@ -32,14 +32,38 @@ for (url in url_base){
   datos_geih<- rbind(datos_geih, temporal)
 }
 
+# revisar si tiene alguna restricción. 
+browseURL("https://en.wikipedia.org/robots.txt")
+
+
 # B data cleaning
 
 
 #Me quedo con las observaciones de +18
 datos_geih<- subset(datos_geih, age >= 18)
+
+
+# ver los missing values 
+is.na(df)
+colSums(is.na(df))
+
+
+unique(df$cod_ase_)
+df$cod_ase_ <- NULL
+
+df$estrato %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
+
+
+# imputar por 1 el estrato 
+df$estrato[is.na(df$estrato)] <-1
+
+voy a arreglar la edad en dias. 
+
+df$edad_[df$uni_med_==1] == df$edad_[df$uni_med_==1]*365
+df$edad_[df$uni_med_==2] == df$edad_[df$uni_med_==2]*30
+
+
 #Punto 2-----------------------------
-
-
 
 X=datos_geih[, c('age')]
 y= datos_geih[, "y_salary_m"]
