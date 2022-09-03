@@ -48,10 +48,13 @@ save(datosgeih, file = "datageih.RData")
 load("datageih.RData")
 
 # elegimos las variables que vamos a usar para el problem set: 
-X1=datos_geih[, c('age','oficio','relab','college','cotPension','fweight', 'formal', 'hoursWorkUsual')]
+X1=datos_geih[, c('age','oficio','relab','college','cotPension','fweight', 'formal', 'hoursWorkUsual', 'sex')]
 y1= datos_geih[,"y_total_m_ha"]
 data_punto1 =cbind(y1,X1)
 data_punto1= data.frame(data_punto1)
+
+# vamos a cambiar el orden de las variables sexo
+data_punto1$sex <- ifelse(data_punto1$sex==0, 1,0)
 
 # limpieza de la base, cambiar las etiquetas y volver las variables factores.
 
@@ -80,7 +83,7 @@ numrelab <- labelsrelab[["values"]]
 
 # relabel de los oficios
 data_punto1 <- data_punto1 %>% 
-  mutate(oficio = recode(oficio, !!!(set_names(oficios, numoficio)), .default = NA_character_))
+  mutate(oficio_label = recode(oficio, !!!(set_names(oficios, numoficio)), .default = NA_character_))
 # relabel de los relab
 data_punto1 <- data_punto1 %>% 
   mutate(relab = recode(relab, !!!(set_names(relab,numrelab)), .default = NA_character_))
@@ -96,6 +99,9 @@ data_punto1 <- data_punto1 %>%
 data_punto1 <- data_punto1 %>% 
   mutate(cotPension = recode(cotPension, !!!(set_names(c("Cotiza","No cotiza","Pensionado"), 1:3)), .default = NA_character_))
 
+data_punto1 <- data_punto1 %>% 
+  mutate(sex = recode(sex, !!!(set_names(c("Hombre","Mujer"), 0:1)), .default = NA_character_))
+
 
 
 # convertir las variables en factores. 
@@ -107,18 +113,61 @@ for (v in variables_chr) {
 
 glimpse(data_punto1)
 
-datos_geih$formal %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
-datos_geih$oficio %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
 
 # imputacion de las variables omitidas. 
 
-
+# no se puede imputar las variables omitidas porque estan autocorrelacionadas. 
+# la variable y la literatura economica enuncia que no es bueno imputarla .
 
 # ver los missing values 
 colSums(is.na(data_punto1))
+data_punto1 <- na.omit(data_punto1)
+colSums(is.na(data_punto1))
+
+#Ya no tiene missing values. 
 
 
 
+# estadisticas descriptivas. 
+
+summary(data_punto1)
+
+# graficas bonitas
+##### boxplot
+
+ggplot(data_punto1, aes(x=relab,y=y1, color=sex))+ geom_boxplot() +
+  #Arreglar el eje y
+  scale_y_continuous(n.breaks=8,labels=scales::dollar) + 
+  #
+  scale_x_discrete(labels=c("Empleado Doméstico","Jornalero u Obrero", "Empleado privado", "Empleado del Gobierno", "Otro", "Patrón o Empleador", "Independiente")) + 
+  #Añadir el titulo, subtitulo y caption
+  labs(title= "Salario por sexo en Bogota", subtitle = "Evidence for Colombia", caption="Source: GEIH 2008")+  
+  #Añadir los labels de los ejes
+  xlab("Tipo de empleado") + ylab("Ingresos por hora") + theme_bw() 
+
+data_punto1$oficio <- as.character(data_punto1$oficio)
+install.packages("waffle", repos = "https://cinc.rud.is")
+library(waffle)
+
+ggplot(data_punto1, aes(fill = oficio, values = y1)) + geom_waffle() +
+
+  coord_equal() +
+  theme_void()
+
+# grafica 2 
+
+ggplot(data_punto1, aes(x=oficio,y=y1))+ geom_boxplot() +
+  #Arreglar el eje y
+  scale_y_continuous(n.breaks=8,labels=scales::dollar) + 
+  #+ 
+  #Añadir el titulo, subtitulo y caption
+  labs(title= "Salario por oficio", subtitle = "Evidence for Colombia", caption="Source: GEIH 2008")+  
+  #Añadir los labels de los ejes
+  xlab("Cateogria de oficio") + ylab("Ingresos por hora") + theme_bw() 
+
+
+data_punto1$formal %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
+data_punto1$oficio %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
 datos_geih$ingtot %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
 
 
