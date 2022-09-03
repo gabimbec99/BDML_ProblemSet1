@@ -52,14 +52,15 @@ save(datosgeih, file = "datageih.RData")
 load("datageih.RData")
 
 # elegimos las variables que vamos a usar para el problem set: 
-X1=datos_geih[, c('age','oficio','relab','college','cotPension','fweight', 'formal', 'hoursWorkUsual', 'sex')]
-y1= datos_geih[,"y_total_m_ha"]
-data_punto1 =cbind(y1,X1)
-data_punto1= data.frame(data_punto1)
+X1=datosgeih[, c('age','oficio','relab','college','cotPension','fweight', 'formal', 'hoursWorkUsual', 'sex', 'depto')]
+y1= datosgeih[,"y_total_m_ha"]
+y2= datosgeih[,"ingtot"]
+datap1 =cbind(y1,y2,X1)
+datap1= data.frame(datap1)
 
 
 # vamos a cambiar el orden de las variables sexo
-data_punto1$sex <- ifelse(data_punto1$sex==0, 1,0)
+datap1$female <- ifelse(datap1$sex==0, 1,0)
 
 # limpieza de la base, cambiar las etiquetas y volver las variables factores.
 
@@ -104,8 +105,8 @@ datap1 <- datap1 %>%
 datap1 <- datap1 %>% 
   mutate(cotPension = recode(cotPension, !!!(set_names(c("Cotiza","No cotiza","Pensionado"), 1:3)), .default = NA_character_))
 
-data_punto1 <- data_punto1 %>% 
-  mutate(sex = recode(sex, !!!(set_names(c("Hombre","Mujer"), 0:1)), .default = NA_character_))
+datap1 <- datap1 %>% 
+  mutate(female = recode(female, !!!(set_names(c("Hombre","Mujer"), 0:1)), .default = NA_character_))
 
 
 
@@ -125,9 +126,9 @@ glimpse(datap1)
 # la variable y la literatura economica enuncia que no es bueno imputarla .
 
 # ver los missing values 
-colSums(is.na(data_punto1))
-data_punto1 <- na.omit(data_punto1)
-colSums(is.na(data_punto1))
+colSums(is.na(datap1))
+data_punto1 <- na.omit(datap1)
+colSums(is.na(datap1))
 
 #Ya no tiene missing values. 
 
@@ -135,12 +136,12 @@ colSums(is.na(data_punto1))
 
 # estadisticas descriptivas. 
 
-summary(data_punto1)
+summary(datap1)
 
 # graficas bonitas
 ##### boxplot
 
-ggplot(data_punto1, aes(x=relab,y=y1, color=sex))+ geom_boxplot() +
+ggplot(datap1, aes(x=relab,y=y1, color=female))+ geom_boxplot() +
   #Arreglar el eje y
   scale_y_continuous(n.breaks=8,labels=scales::dollar) + 
   #
@@ -150,18 +151,11 @@ ggplot(data_punto1, aes(x=relab,y=y1, color=sex))+ geom_boxplot() +
   #Añadir los labels de los ejes
   xlab("Tipo de empleado") + ylab("Ingresos por hora") + theme_bw() 
 
-data_punto1$oficio <- as.character(data_punto1$oficio)
-install.packages("waffle", repos = "https://cinc.rud.is")
-library(waffle)
-
-ggplot(data_punto1, aes(fill = oficio, values = y1)) + geom_waffle() +
-
-  coord_equal() +
-  theme_void()
+datap1$oficio <- as.character(datap1$oficio)
 
 # grafica 2 
 
-ggplot(data_punto1, aes(x=oficio,y=y1))+ geom_boxplot() +
+ggplot(datap1, aes(x=oficio,y=y1))+ geom_boxplot() +
   #Arreglar el eje y
   scale_y_continuous(n.breaks=8,labels=scales::dollar) + 
   #+ 
@@ -171,9 +165,9 @@ ggplot(data_punto1, aes(x=oficio,y=y1))+ geom_boxplot() +
   xlab("Cateogria de oficio") + ylab("Ingresos por hora") + theme_bw() 
 
 
-data_punto1$formal %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
-data_punto1$oficio %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
-datos_geih$ingtot %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
+datap1$formal %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
+datap1$oficio %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
+datap1$ingtot %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
 
 
 
@@ -256,15 +250,14 @@ var(fit.b$fitted.values)
 #Buscamos una medida del ingreso salarial que logre capturar dinámicas del mercado laboral, y tenga pocas distorsiones frente
 #a por ejemplo, la cantidad de horas que se trabajan
 #Como se encuentra en la base, la dirección de la dummy está "al revés" se crea la variable female
-datosgeih$female <- ifelse(datosgeih$sex==0, 1,0)
-datosgeih$sqage <- datosgeih$age^2
+datap1$sqage <- datap1$age^2
 #Teniendo en cuenta el modelo del inciso anterior se deben crear las interacciones como nuevas variables
-datosgeih$agefemale <- datosgeih$female * datosgeih$age
-datosgeih$sqagefemale <- datosgeih$female * datosgeih$age^2
+datap1$agefemale <- datap1$female * datap1$age
+datap1$sqagefemale <- datap1$female * datap1$age^2
 
 #Modelo y visualización de resultados
-x=datosgeih[, c("female","age","sqage","agefemale", "sqagefemale")]
-datap3 =cbind(y,x,w)
+x=datap1[, c("female","age","sqage","agefemale", "sqagefemale")]
+datap3 =cbind(y1,x,w)
 datap3= data.frame(datap3)
 skim(datap3)
 #modelo2 = lm_robust(formula= y ~ female+age+sqage+agefemale+sqagefemale , data = datap3, weights= w, se_type="HC1")
@@ -275,7 +268,7 @@ modelo2star_r <- commarobust(modelo2star)
 stargazer(modelo2star, se =starprep(modelo2star_r)) #Para tex
 stargazer(modelo2star, se= starprep(modelo2star_r), type ="text") #Para text
 
-#Punto 3 (VersiónMatteo para sacar gráfico)
+###################Punto 3 (VersiónMatteo para sacar gráfico)
 datosgeih$female <- ifelse(datosgeih$sex==0, "Mujer","Hombre")
 
 x=datosgeih[,c('female', 'fweight','age')]
