@@ -2,13 +2,6 @@
 ## Daniel Lasso, Matteo Rozo y Gabriela Mejía ##
 
 # Punto 1 -------------------------------------------------
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> parent of 69eee26 (Update Scrapping.R)
-#install.packages("sandwich")
->>>>>>> parent of 69eee26 (Update Scrapping.R)
 library(pacman)
 library(rvest, tidyverse)
 library (dplyr)
