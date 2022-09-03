@@ -4,11 +4,15 @@
 # Punto 1 -------------------------------------------------
 
 #Antes de comenzar, es necesario installar y cargar aquellos paquetes y librerías útiles para nuestro desarrollo.De tal forma:
-
-install.packages("sandwich")
+#install.packages("stargazer")
+#install.packages("sandwich")
+#install.packages("estimatr")
 library(pacman)
 library(rvest, tidyverse)
 library (dplyr)
+library(stargazer)
+library(estimatr)
+
 
 #Posteriormente, se requiere pacman para usar el comando p_loadm con el se cargan las librerias necesarias
 require(pacman)
@@ -48,10 +52,10 @@ save(datosgeih, file = "datageih.RData")
 load("datageih.RData")
 
 # elegimos las variables que vamos a usar para el problem set: 
-X1=datos_geih[, c('age','oficio','relab','college','cotPension','fweight', 'formal', 'hoursWorkUsual')]
-y1= datos_geih[,"y_total_m_ha"]
-data_punto1 =cbind(y1,X1)
-data_punto1= data.frame(data_punto1)
+X1=datosgeih[, c('age','oficio','relab','college','cotPension','fweight', 'formal', 'hoursWorkUsual')]
+y1= datosgeih[,"y_total_m_ha"]
+datap1 =cbind(y1,X1)
+datap1= data.frame(datap1)
 
 # limpieza de la base, cambiar las etiquetas y volver las variables factores.
 
@@ -79,47 +83,47 @@ relab <- labelsrelab[["level"]]
 numrelab <- labelsrelab[["values"]]
 
 # relabel de los oficios
-data_punto1 <- data_punto1 %>% 
+datap1 <- datap1 %>% 
   mutate(oficio = recode(oficio, !!!(set_names(oficios, numoficio)), .default = NA_character_))
 # relabel de los relab
-data_punto1 <- data_punto1 %>% 
+datap1 <- datap1 %>% 
   mutate(relab = recode(relab, !!!(set_names(relab,numrelab)), .default = NA_character_))
 
 
 # otros relab
-data_punto1 <- data_punto1 %>% 
+datap1 <- datap1 %>% 
   mutate(formal = recode(formal, !!!(set_names(c("informal","formal"), 0:1)), .default = NA_character_))
 
-data_punto1 <- data_punto1 %>% 
+datap1 <- datap1 %>% 
   mutate(college = recode(college, !!!(set_names(c("No universidad","Universidad"), 0:1)), .default = NA_character_))
 
-data_punto1 <- data_punto1 %>% 
+datap1 <- datap1 %>% 
   mutate(cotPension = recode(cotPension, !!!(set_names(c("Cotiza","No cotiza","Pensionado"), 1:3)), .default = NA_character_))
 
 
 
 # convertir las variables en factores. 
-variables_chr <- names(select_if(data_punto1, is.character))
+variables_chr <- names(select_if(datap1, is.character))
 
 for (v in variables_chr) {
-  data_punto1[, v] <- as.factor(data_punto1[, v, drop = T])
+  datap1[, v] <- as.factor(datap1[, v, drop = T])
 }
 
-glimpse(data_punto1)
+glimpse(datap1)
 
-datos_geih$formal %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
-datos_geih$oficio %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
+datosgeih$formal %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
+datosgeih$oficio %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
 
 # imputacion de las variables omitidas. 
 
 
 
 # ver los missing values 
-colSums(is.na(data_punto1))
+colSums(is.na(datap1))
 
 
 
-datos_geih$ingtot %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
+datosgeih$ingtot %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
 
 
 
@@ -131,14 +135,14 @@ datos_geih$ingtot %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
 x=datosgeih[, c('age')]
 y= datosgeih[, "y_total_m_ha"]
 w=datosgeih[, c("fweight")]
-datap2 =cbind(y,X,w)
+datap2 =cbind(y,x,w)
 datap2= data.frame(datap2)
 
 
 
 #Punto a
 #Dado el enfoque de nuestro trabajo, se tomará la variable de ___, por las siguientes razones;
-#Se observa como esta´n distribuídos los ingresos a lo largo de la muestra (para los valores de edad) 
+#Se observa como están distribuídos los ingresos a lo largo de la muestra (para los valores de edad) 
 ggplot(data=datosgeih ,aes(x,y)) + geom_point() + 
   #Arreglar el eje x
   scale_x_continuous(n.breaks=10, limits=c(18,87)) + 
@@ -147,12 +151,12 @@ ggplot(data=datosgeih ,aes(x,y)) + geom_point() +
   #Añadir el titulo, subtitulo y caption
   labs(title= "Relacion entre salario y edad", subtitle = "Evidence for Colombia", caption="Source: GEIH 2008")+  
   #Añadir los labels de los ejes
-  xlab("Edad") + ylab("Salario") + theme_bw()
+  xlab("Edad") + ylab("Salario por hora") + theme_bw()
 
 
 #Punto b
 # A continuación, se estima el modelo base con los pesos ponderados de cada observación sea presentativa de la población
-modelo1 <- lm("y ~ X + I(X^2)", data=datap2, weights= w, x=TRUE )
+modelo1 <- lm("y ~ x + I(x^2)", data=datap2, weights= w, x=TRUE )
 stargazer(modelo1) #Para tex
 stargazer(modelo1, type ="text") #Para text
 
@@ -169,7 +173,7 @@ rtmse1m= sqrt(mean((modelo1$model$y - modelo1$fitted.values)^2))
 
 #Punto d
 ## Se gráfican los valores predichos con los ajustes de pesos ponderados
-ggplot(data=datap2 ,aes(X,y)) + stat_smooth(method = "lm", formula = "y ~ x + I(x^2)", size = 1, color = "red", aes(weight = w)) + 
+ggplot(data=datap2 ,aes(x,y)) + stat_smooth(method = "lm", formula = "y ~ x + I(x^2)", size = 1, color = "red", aes(weight = w)) + 
   # Arreglando el eje x
   scale_x_continuous(n.breaks=10, limits=c(18,87)) + 
   # Arreglando el eje y
@@ -191,7 +195,7 @@ B <- 10000
 pred <- numeric(B)
 for (i in 1:B) {
   boot <- sample(n, n, replace = TRUE)
-  fit.b <- lm("y ~ X + I(X^2)", data = datap2[boot,])
+  fit.b <- lm("y ~ x + I(x^2)", data = datap2[boot,])
   pred[i] <- predict(fit.b, list(X = 50)) + sample(resid(fit.b), size = 1)
 }
 quantile(pred, c(0.025, 0.975))
@@ -209,19 +213,17 @@ datosgeih$agefemale <- datosgeih$female * datosgeih$age
 datosgeih$sqagefemale <- datosgeih$female * datosgeih$age^2
 
 #Modelo y visualización de resultados
-x=datos_geih[, c("female","age","sqage","agefemale", "sqagefemale")]
-data_punto3 =cbind(y,X)
-data_punto3= data.frame(data_punto3)
-skim(data_punto3)
-modelo2 = lm("y ~ female+age+sqage+agefemale+sqagefemale" , data = data_punto3, weights= datos_geih$fweight, x=TRUE) 
-summary(modelo2)
-#Es mejor usar stargazer
-m2_summary=summary(modelo2)$coefficients
-m2_summary_print = m2_summary
-m2_summary_print[,'t value'] = abs(m2_summary_print[,'t value'])
-kable(m2_summary_print[,c('Estimate', 'Std. Error', 't value','Pr(>|t|)')], digits = 1, col.names = c('Weight', 'SE', "|t|","P-value"), booktabs = TRUE, center = TRUE) %>% kable_styling(position = "center")
-#Sin embargo, es razonable pensar que a la hora de hablar de ingreso o salario, el error será heterocedástico
-summ(modelo2, robust = "HC1")
+x=datosgeih[, c("female","age","sqage","agefemale", "sqagefemale")]
+datap3 =cbind(y,x,w)
+datap3= data.frame(datap3)
+skim(datap3)
+#modelo2 = lm_robust(formula= y ~ female+age+sqage+agefemale+sqagefemale , data = datap3, weights= w, se_type="HC1")
+#summary(modelo2)
+#Queremos obtener de manera homogenea las tablas en stargazer para latex
+modelo2star= lm(y ~ female+age+sqage+agefemale+sqagefemale , data = datap3, weights= w, x=TRUE)
+modelo2star_r <- commarobust(modelo2star)
+stargazer(modelo2star, se =starprep(modelo2star_r)) #Para tex
+stargazer(modelo2star, se= starprep(modelo2star_r), type ="text") #Para text
 
 #Punto 3 (VersiónMatteo para sacar gráfico)
 datosgeih$female <- ifelse(datosgeih$sex==0, "Mujer","Hombre")
@@ -281,6 +283,14 @@ ggplot(data=datap3 ,aes(x=age,y=y,col=female)) +
   # anadir los labels de los ejes
   xlab("Edad") + ylab("Salario") + theme_bw()
 
+# Punto C
+#Las variables que permiten capturar alguna noción de la ocupación de los colombianos, son oficio, relab y la formalidad
+#que establecen respectivamente el oficio (dentro de categorías amplias) y  la relación laboral que ocupan (Empleado del gobierno, de empresas privadas) junto con si es de caracter formal o informal
+names(select_if(datap1, is.factor))
+#Dumificamos para poder condicional
+dummiesfijos <- model.matrix(~ oficio+relab+formal, datap1) %>%
+  as.data.frame()
+datap3c=cbind(dummiesfijos,datap3)
 #Punto 4-----------------------------
 #Punto a
 
