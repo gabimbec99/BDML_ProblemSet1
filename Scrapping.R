@@ -334,6 +334,21 @@ names(select_if(datap1, is.factor))
 dummiesfijos <- model.matrix(~ oficio+relab+formal, datap1) %>%
   as.data.frame()
 datap3c=cbind(dummiesfijos,datap3)
+
+
+x=datosgeih[,c("college","formal","oficio",'female', 'fweight','age')]
+
+modelo4<-lm(l~x,db)
+stargazer(modelo4,type="text")
+
+db<-db %>% mutate(res_y_a=lm(l~x,db)$residuals, #Residuals of logwage~ability (we are "purging" ability)
+                  res_s_a=lm(formal~oficio+formal,db)$residuals, #Residuals of schooling~ability (we are "purging" ability)
+)
+
+reg2<-lm(res_y_a~res_s_a-1,db)
+stargazer(reg1,reg2,type="text")
+
+
 #Punto 4-----------------------------
 #Punto a
 
