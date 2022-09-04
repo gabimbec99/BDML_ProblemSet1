@@ -48,11 +48,11 @@ browseURL("https://ignaciomsarmiento.github.io/robots.txt")
 # B data cleaning
 #Se guardan las observaciones de +18
 datosgeih<- subset(datos_geih, age >= 18)
-save(datosgeih, file = "datageih.RData")
-load("datageih.RData")
+#write.csv(datosgeih, "D:/noveno semestre/big data/Problem_set1/BDML_ProblemSet1/GEIH_BIG_DATA.csv", row.names=FALSE)
+#datosgeih <- read.csv("D:/noveno semestre/big data/Problem_set1/BDML_ProblemSet1/GEIH_BIG_DATA.csv", row.names=FALSE)
 
 # elegimos las variables que vamos a usar para el problem set: 
-X1=datosgeih[, c('age','oficio','relab','college','cotPension','fweight', 'formal', 'hoursWorkUsual', 'sex', 'depto')]
+X1=datosgeih[, c('age','oficio','relab','college','cotPension','fweight', 'formal', 'hoursWorkUsual', 'sex', 'depto', "clase", "maxEducLevel", "dsi","p6426","p6580s1","sizeFirm","wap")]
 y1= datosgeih[,"y_total_m_ha"]
 y2= datosgeih[,"ingtot"]
 datap1 =cbind(y1,y2,X1)
@@ -87,12 +87,29 @@ labelsrelab$level <- gsub('"','',as.character(labelsrelab$level))
 relab <- labelsrelab[["level"]]
 numrelab <- labelsrelab[["values"]]
 
+# sizefirm 
+labelsfirma=labels[labels$Variable == 'sizeFirm',]
+firma <- labelsfirma[["level"]]
+numfirma <- labelsfirma[["values"]]
+
+# max educ level 
+labelseduc=labels[labels$Variable == 'maxEducLevel',]
+educ <- labelseduc[["level"]]
+numeduc <- labelseduc[["values"]]
+
+
 # relabel de los oficios
 datap1 <- datap1 %>% 
   mutate(oficio = recode(oficio, !!!(set_names(oficios, numoficio)), .default = NA_character_))
 # relabel de los relab
 datap1 <- datap1 %>% 
   mutate(relab = recode(relab, !!!(set_names(relab,numrelab)), .default = NA_character_))
+# relab del tamano de la firma
+datap1 <- datap1 %>% 
+  mutate(sizeFirm = recode(sizeFirm, !!!(set_names(firma, numfirma)), .default = NA_character_))
+# relab maxeduc
+datap1 <- datap1 %>% 
+  mutate(maxEducLevel = recode(maxEducLevel, !!!(set_names(educ, numeduc)), .default = NA_character_))
 
 
 # otros relab
@@ -108,7 +125,14 @@ datap1 <- datap1 %>%
 datap1 <- datap1 %>% 
   mutate(female = recode(female, !!!(set_names(c("Hombre","Mujer"), 0:1)), .default = NA_character_))
 
+datap1 <- datap1 %>% 
+  mutate(female = recode(female, !!!(set_names(c("Rural","Urban"), 0:1)), .default = NA_character_))
 
+datap1 <- datap1 %>% 
+  mutate(wap = recode(wap, !!!(set_names(c("Otra cosa","Poblacion en edad de trabajar"), 0:1)), .default = NA_character_))
+
+datap1 <- datap1 %>% 
+  mutate(dsi = recode(dsi, !!!(set_names(c("Otra cosa","Desempleado"), 0:1)), .default = NA_character_))
 
 # convertir las variables en factores. 
 variables_chr <- names(select_if(datap1, is.character))
