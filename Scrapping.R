@@ -257,7 +257,7 @@ peakage=50
 #Sin bootstrap
 predict(modelo1, list(X = peakage), interval = "c")
 
-#Con bootstrap
+#Con bootstrap v1
 n<-nrow(modelo1$model)
 B <- 10000
 pred <- numeric(B)
@@ -268,6 +268,34 @@ for (i in 1:B) {
 }
 quantile(pred, c(0.025, 0.975))
 var(fit.b$fitted.values)
+
+
+#Con bootstrap v2
+n<-nrow(modelo1$model)
+B <- 10000
+pred <- numeric(B)
+upper <- numeric(B)
+lower <- numeric(B)
+
+set.seed(42)
+for (i in 1:B) {
+  boot <- sample(n, n, replace = TRUE)
+  fit.b <- lm("y ~ x + I(x^2)", data = datap2[boot,], weights= w, x=TRUE )
+  pred[i] <- predict(fit.b, data.frame(x=50)) 
+  lower[i] <- predict(fit.b, data.frame(x=50),interval = "c")[2]
+  upper[i] <- predict(fit.b, data.frame(x=50),interval = "c")[3]
+}
+quantile(pred, c(0.025, 0.975))
+
+yhatbt=mean(pred)
+upperbt=mean(upper)
+lowerbt=mean(lower)
+
+boots <- data.frame(yhatbt, lowerbt,upperbt)
+names(boots) <- c("fit", "lwr", "upr")
+
+icbt <- rbind(matriz,boots)
+
 
 
 #Punto 3-----------------------------
