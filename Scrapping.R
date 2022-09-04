@@ -126,7 +126,7 @@ datap1 <- datap1 %>%
   mutate(female = recode(female, !!!(set_names(c("Hombre","Mujer"), 0:1)), .default = NA_character_))
 
 datap1 <- datap1 %>% 
-  mutate(female = recode(female, !!!(set_names(c("Rural","Urban"), 0:1)), .default = NA_character_))
+  mutate(clase = recode(clase, !!!(set_names(c("Rural","Urban"), 0:1)), .default = NA_character_))
 
 datap1 <- datap1 %>% 
   mutate(wap = recode(wap, !!!(set_names(c("Otra cosa","Poblacion en edad de trabajar"), 0:1)), .default = NA_character_))
