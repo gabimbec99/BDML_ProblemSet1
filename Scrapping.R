@@ -200,9 +200,9 @@ datap1$ingtot %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
 #Punto 2-----------------------------
 
 #Para comernzar, vamos a seleccionar aquellas variables más relevantes para el análisis
-x=datosgeih[, c('age')]
-y= datosgeih[, "y_total_m_ha"]
-w=datosgeih[, c("fweight")]
+x=datap1[, c('age')]
+y= datap1[, y1]
+w=datap1[, c("fweight")]
 datap2 =cbind(y,x,w)
 datap2= data.frame(datap2)
 
