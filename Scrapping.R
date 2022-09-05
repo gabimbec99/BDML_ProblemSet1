@@ -54,7 +54,6 @@ datosgeih<- subset(datos_geih, age >= 18)
 
 # elegimos las variables que vamos a usar para el problem set: 
 X1=datosgeih[, c('age','oficio','relab','college','cotPension','fweight', 'formal', 'hoursWorkUsual', 'sex', "clase", "maxEducLevel", "dsi","p6426","sizeFirm","wap")]
->>>>>>> Stashed changes
 y1= datosgeih[,"y_total_m_ha"]
 y2= datosgeih[,"ingtot"]
 datap1 =cbind(y1,y2,X1)
