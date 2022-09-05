@@ -264,10 +264,10 @@ ggplot(data=datap2 ,aes(x,y)) + geom_point(color="#00C0AF") +
 
 #Punto B)
 # A continuación, se estima el modelo base con los pesos ponderados de cada observación sea presentativa de la población
-modelo1 <- lm("y ~ x + I(x^2)", data=datap2, weights= w, x=TRUE )
-stargazer(modelo1) #Para tex
-stargazer(modelo1, type ="text") #Para text
-
+modelo1 <- lm("y ~ age + sqage", data=datap1, weights= fweight, x=TRUE )
+modelo1_r <- commarobust(modelo1)
+stargazer(modelo1, se=starprep(modelo1_r)) #Para tex
+stargazer(modelo1,se=starprep(modelo1_r), type ="text") #Para text
 
 #Punto C)
 # Se encuentran todas las medidas de ajuste del modelo. 
@@ -398,38 +398,42 @@ skim(datap3)
 
 #Punto A)
 modelo2 <- lm("y ~female" , data = datap3, weights= datap3$fweights, x=TRUE ) 
-summary(modelo2)
-stargazer(modelo2)#Para subir a Latex
-stargazer(modelo2, type = "text")#En text
+modelo2robust <- commarobust(modelo2)
+stargazer(modelo2, se=starprep(modelo2robust))#Para subir a Latex
+stargazer(modelo2, se=starprep(modelo2robust), type="text") #En text
 
 # Se encuentran todas las medidas de ajuste del modelo. 
 ajuste2 <- broom::glance(modelo2)
+ajuste2<-data.frame(t(ajuste2))
+stargazer(ajuste1,ajuste2, summary=FALSE,rownames=TRUE,single.row=TRUE,
+          align=TRUE) #Para ver en R
 #Se encuetran los errores cuadráticos medios 
 mse2= mean(modelo2$residuals^2)
 rtmse2= sqrt(mean(modelo2$residuals^2))
-#Se encuetran los errores cuadráticos medios (manual)
-mse2m= mean((modelo2$model$y - modelo2$fitted.values)^2)
-rtmse2m= sqrt(mean((modelo2$model$y - modelo2$fitted.values)^2))
 
 
 #Punto B)
 
 #Se adiciona a la especificación del modelo no condicionado las variables de edad
-modelo3= lm(y ~ female+age+sqage+agefemale+sqagefemale , data = datap3, weights= w, x=TRUE)
+modelo3= lm("y ~ female+age+sqage+agefemale+sqagefemale" , data = datap3, weights= w, x=TRUE)
 
 #Se encuentran los coefficientes y la tabla en latex
-summary(modelo3)
-stargazer(modelo3)#Para subir a Latex
-stargazer(modelo3, type = "text")#En text
+modelo3robust <- commarobust(modelo3)
+stargazer(modelo3, se =starprep(modelo3robust)) #Para tex
+stargazer(modelo3, se =starprep(modelo3robust), type ="text") #Para text
 
 # Se encuentran todas las medidas de ajuste del modelo. 
 ajuste3 <- broom::glance(modelo3)
+ajuste3<-data.frame(t(ajuste3))
+ajustetotal <- cbind(ajuste1,ajuste2,ajuste3)
+stargazer(ajustetotal, summary=FALSE,rownames=TRUE,single.row=TRUE,
+          align=TRUE, type="text") #Para ver en R
+stargazer(ajustetotal, summary=FALSE,rownames=TRUE,single.row=TRUE,
+          align=TRUE) #Para Latex
 #Se encuetran los errores cuadráticos medios 
 mse3= mean(modelo3$residuals^2)
 rtmse3= sqrt(mean(modelo3$residuals^2))
-#Se encuetran los errores cuadráticos medios (manual)
-mse3m= mean((modelo3$model$y - modelo3$fitted.values)^2)
-rtmse3m= sqrt(mean((modelo3$model$y - modelo3$fitted.values)^2))
+
 
 
 ##Se grafica solo la linea de ajuste para cada sexo
@@ -444,6 +448,15 @@ ggplot(data=datap3 ,aes(x=age,y=y,col=female)) +
   # anadir los labels de los ejes
   xlab("Edad") + ylab("Salario") + theme_bw()
 
+#Tengo 3 modelos (Solo edad, género y el que tiene sus interacciones)
+#Reporte de coeficientes
+stargazer(modelo1, modelo2, modelo3, title="Regression Results", align=TRUE,no.space=TRUE, se=starprep(modelo1_r,modelo2robust,modelo3robust))
+#Medidas de ajuste 
+ajustetotal <- cbind(ajuste1,ajuste2,ajuste3)
+stargazer(ajustetotal, summary=FALSE,rownames=TRUE,single.row=TRUE,
+          align=TRUE, type="text") #Para ver en R
+stargazer(ajustetotal, summary=FALSE,rownames=TRUE,single.row=TRUE,
+          align=TRUE) #Para Latex
 # Punto C)
 #Las variables que permiten capturar alguna noción de la ocupación de los colombianos, son oficio, relab y la formalidad
 #que establecen respectivamente el oficio (dentro de categorías amplias) y  la relación laboral que ocupan (Empleado del gobierno, de empresas privadas) junto con si es de caracter formal o informal.
