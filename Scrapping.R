@@ -211,9 +211,9 @@ ggplot(datap1, aes(x=y1)) +
 
 #Punto 2-----------------------------
 
-#Para comernzar, vamos a seleccionar aquellas variables más relevantes para el análisis
+#Para comenzar, vamos a seleccionar aquellas variables más relevantes para el análisis
 x=datap1[, c('age')]
-y= datap1[, y1]
+y= datap1[, c("y1")]
 w=datap1[, c("fweight")]
 datap2 =cbind(y,x,w)
 datap2= data.frame(datap2)
@@ -252,18 +252,6 @@ mse1m= mean((modelo1$model$y - modelo1$fitted.values)^2)
 rtmse1m= sqrt(mean((modelo1$model$y - modelo1$fitted.values)^2))
 
 #Punto d
-## Se gráfican los valores predichos con los ajustes de pesos ponderados
-ggplot(data=datap2 ,aes(x,y)) + stat_smooth(method = "lm", formula = "y ~ x + I(x^2)", size = 1, color = "red", aes(weight = w)) + 
-  geom_ribbon(data=bootsic,aes(ymin=yhatl2,ymax=yhatu2), alpha=0.1, fill = "steelblue2")+
-  # Arreglando el eje x
-  scale_x_continuous(n.breaks=10, limits=c(18,87)) + 
-  # Arreglando el eje y
-  scale_y_continuous(n.breaks=8,labels=scales::dollar) + 
-  #Se añade el titulo, subtitulo y caption
-  labs(title= "Relacion entre salario y edad", subtitle = "Evidence for Colombia", caption="Source: GEIH 2008")+  
-  #Se añaden los labels de los ejes
-  xlab("Age") + ylab("Income salaried + Independents Total - Nominal hourly") + theme_bw()
-
 ##Discusion Peak Ages: Boostrap sobre peak ages
 peakage=50
 
@@ -284,6 +272,7 @@ coef_function <- function(formula, data, indices) {
 #perform bootstrapping with 2000 replications
 reps <- boot(data=datap2, statistic=coef_function, R=2000, formula=y ~ x + I(x^2), weights = w)
 #Usar errores estandares para estimar los intervalos de confianza
+x=datap1[, c('age')]
 boots <- data.frame(x)
 boots$x2 <-boots$x^2
 
@@ -307,12 +296,12 @@ bIu=(I+seI*1.96)
 bxu=(x+seX*1.96)
 bx2u=(x2+seX2*1.96)
 
-yhatl=bIl+bxl*boots$x+bx2l*boots$x2
-yhatu=bIu+bxu*boots$x+bx2u*boots$x2
+yhatl3=bIl+bxl*boots$x+bx2l*boots$x2
+yhatu3=bIu+bxu*boots$x+bx2u*boots$x2
 
-bootsic <- cbind(boots,yhatl,yhatu)
+bootsic <- cbind(boots,yhatl3,yhatu3)
 
-#Con bootstrap v3
+#Con bootstrap v2
 
 lboundsi= boot.ci(reps,type="basic",index=1)$basic[4]
 uboundsi=boot.ci(reps,type="basic",index=1)$basic[5]
@@ -354,6 +343,17 @@ names(boots) <- c("fit", "lwr", "upr")
 
 icbt <- rbind(matriz,boots)
 
+## Se gráfican los valores predichos con los ajustes de pesos ponderados
+ggplot(data=datap2 ,aes(x,y)) + stat_smooth(method = "lm", formula = "y ~ x + I(x^2)", size = 1, color = "red", aes(weight = w)) + 
+  geom_ribbon(data=bootsic,aes(ymin=yhatl3,ymax=yhatu3), alpha=0.1, fill = "steelblue2")+
+  # Arreglando el eje x
+  scale_x_continuous(n.breaks=10, limits=c(18,87)) + 
+  # Arreglando el eje y
+  scale_y_continuous(n.breaks=8,labels=scales::dollar) + 
+  #Se añade el titulo, subtitulo y caption
+  labs(title= "Relacion entre salario y edad", subtitle = "Evidence for Colombia", caption="Source: GEIH 2008")+  
+  #Se añaden los labels de los ejes
+  xlab("Age") + ylab("Income salaried + Independents Total - Nominal hourly") + theme_bw()
 
 
 
@@ -473,6 +473,26 @@ db<-data.frame(res_y_a,res_s_a,w)
 modelo4c<-lm(res_y_a~res_s_a-1,db, weights=w)
 stargazer(modelo3c,modelo4c,type="text")
 stargazer(modelo3c,modelo4c)
+
+#Con bootstrap v1
+set.seed(428)
+library(boot)
+
+#define function to calculate R-squared
+res_function <- function(formula, data, indices) {
+  d <- data[indices,] #allows boot to select sample
+  fit <-coef(lm("res_y_a~res_s_a-1", data = d,  weights = w))
+  return(fit) 
+}
+
+#perform bootstrapping with 2000 replications
+reps2 <- boot(data=datap3c, statistic=res_function, R=2000, formula="res_y_a~res_s_a-1", weights = w)
+seRBs=apply(reps2$t,2,sd)[1]
+seR=sqrt(diag(vcov(modelo4c)))
+
+stargazer(modelo3c,modelo4c,type="text")
+stargazer(modelo3c,modelo4c)
+
 
 
 #Punto 4-----------------------------
