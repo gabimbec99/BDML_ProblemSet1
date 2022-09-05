@@ -148,8 +148,8 @@ for (v in variables_chr) {
 }
 
 glimpse(datap1)
-
-
+estadisticas <- skim(datap1)
+stargazer(datap1, type="text")
 # imputacion de las variables omitidas. 
 
 # no se puede imputar las variables omitidas porque estan autocorrelacionadas. 
@@ -199,7 +199,13 @@ datap1$formal %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
 datap1$oficio %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
 datap1$ingtot %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
 
-
+#Histograma simple
+ggplot(datap1, aes(x=y1)) +
+  geom_histogram(aes(y=..density..),position="identity", alpha=0.8,fill="#00C0AF")+
+  scale_x_continuous(n.breaks=8,labels=scales::dollar)+
+  labs(title= "Histograma de ingreso laboral", subtitle = "Evidencia para Colombia", caption="Fuente: GEIH 2008")+  
+  #Añadir los labels de los ejes
+  xlab("Ingreso laboral") + ylab("Densidad") + theme_bw() 
 
 
 
