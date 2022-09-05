@@ -264,9 +264,10 @@ ggplot(data=datap2 ,aes(x,y)) + geom_point(color="#00C0AF") +
 
 #Punto b
 # A continuación, se estima el modelo base con los pesos ponderados de cada observación sea presentativa de la población
-modelo1 <- lm("y ~ x + I(x^2)", data=datap2, weights= w, x=TRUE )
-stargazer(modelo1) #Para tex
-stargazer(modelo1, type ="text") #Para text
+modelo1 <- lm("y ~ age + sqage", data=datap1, weights= fweight, x=TRUE )
+modelo1_r <- commarobust(modelo1)
+stargazer(modelo1, se=starprep(modelo1_r)) #Para tex
+stargazer(modelo1,se=starprep(modelo1_r), type ="text") #Para text
 
 
 #Punto c
@@ -432,7 +433,7 @@ rtmse2= sqrt(mean(modelo2$residuals^2))
 
 #Punto B
 
-modelo3= lm(y ~ female+age+sqage+agefemale+sqagefemale , data = datap3, weights= w, x=TRUE)
+modelo3= lm("y ~ female+age+sqage+agefemale+sqagefemale" , data = datap3, weights= w, x=TRUE)
 modelo3robust <- commarobust(modelo3)
 stargazer(modelo3, se =starprep(modelo3robust)) #Para tex
 stargazer(modelo3, se =starprep(modelo3robust), type ="text") #Para text
@@ -441,11 +442,6 @@ stargazer(modelo3, se =starprep(modelo3robust), type ="text") #Para text
 # Se encuentran todas las medidas de ajuste del modelo. 
 ajuste3 <- broom::glance(modelo3)
 ajuste3<-data.frame(t(ajuste3))
-ajustetotal <- cbind(ajuste1,ajuste2,ajuste3)
-stargazer(ajustetotal, summary=FALSE,rownames=TRUE,single.row=TRUE,
-          align=TRUE, dep.var.labels=c("Modelo 1","Modelo 2","Modelo 3"), type="text") #Para ver en R
-stargazer(ajustetotal, summary=FALSE,rownames=TRUE,single.row=TRUE,
-          align=TRUE, dep.var.labels=c("Modelo 1","Modelo 2","Modelo 3")) #Para Latex
 
 #Se encuetran los errores cuadráticos medios 
 mse3= mean(modelo3$residuals^2)
@@ -453,10 +449,19 @@ rtmse3= sqrt(mean(modelo3$residuals^2))
 
 
 #Tengo 3 modelos (Solo edad, género y el que tiene sus interacciones)
+#Reporte de coeficientes
 stargazer(modelo1, modelo2, modelo3, title="Regression Results",
-          align=TRUE, dep.var.labels=c("Ingreso-Edad","Ingreso-Género", "Ingreso- Género y Edad"),no.space=TRUE)
+          align=TRUE,no.space=TRUE, se=starprep(modelo1_r,modelo2robust,modelo3robust))
 stargazer(modelo1, modelo2, modelo3, title="Regression Results",
-          align=TRUE, dep.var.labels=c("Ingreso-Edad","Ingreso-Género", "Ingreso- Género y Edad"),no.space=TRUE, type="te")
+          align=TRUE,no.space=TRUE,se=starprep(modelo1_r,modelo2robust,modelo3robust), type="text")
+
+#Medidas de ajuste 
+ajustetotal <- cbind(ajuste1,ajuste2,ajuste3)
+stargazer(ajustetotal, summary=FALSE,rownames=TRUE,single.row=TRUE,
+          align=TRUE, dep.var.labels=c("Modelo 1","Modelo 2","Modelo 3"), type="text") #Para ver en R
+stargazer(ajustetotal, summary=FALSE,rownames=TRUE,single.row=TRUE,
+          align=TRUE, dep.var.labels=c("Modelo 1","Modelo 2","Modelo 3")) #Para Latex
+
 
 #Punto 3.B(VersiónMatteo para sacar gráfico) -----------------------------
 datosgeih$female <- ifelse(datosgeih$sex==0, "Mujer","Hombre")
