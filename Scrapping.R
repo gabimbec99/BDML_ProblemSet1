@@ -582,6 +582,7 @@ test$modelo3<-predict(modelo3,newdata = test)
 rmse<-with(test,sqrt(mean((y-modelo3)^2)))
 rmsemodelos[3,] <- c(3,rmse)
 
+
 modelo4 <- lm("y ~ -1+.-w", data=train, weights= train$w)
 test$modelo4<-predict(modelo4,newdata = test)
 rmse<-with(test,sqrt(mean((y-modelo4)^2)))
@@ -609,50 +610,82 @@ test$modelo5<-predict(modelo5,newdata = test)
 rmse<-with(test,sqrt(mean((res_y_a-modelo5)^2)))
 rmsemodelos[5,] <- c(5,rmse)
 
-modelo6 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
-test$modelo4<-predict(modelo4,newdata = test)
-rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
-rmsemodelos[4,] <- c(4,rmse)
-
-modelo7 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
-test$modelo4<-predict(modelo4,newdata = test)
-rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
-rmsemodelos[4,] <- c(4,rmse)
-
-modelo8 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
-test$modelo4<-predict(modelo4,newdata = test)
-rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
-rmsemodelos[4,] <- c(4,rmse)
 
 
-modelo9 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
-test$modelo4<-predict(modelo4,newdata = test)
-rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
-rmsemodelos[4,] <- c(4,rmse)
+modelo6 <- lm("log(y)~ -1.-res_y_a-res_y_a-w", data=train, weights= w)
+test$modelo6<-predict(modelo6,newdata = test)
+rmse<-with(test,sqrt(mean((y-modelo6)^2)))
+rmsemodelos[6,] <- c(6,rmse)
 
-modelo10 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
-test$modelo4<-predict(modelo4,newdata = test)
-rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
-rmsemodelos[4,] <- c(4,rmse)
+modelo7 <- lm("y~age+I(age^2)+I(age^3)+female+formalinformal+(age+I(age^2)+I(age^3)):female:formalinformal ", data=train, weights= w)
+test$modelo7<-predict(modelo7,newdata = test)
+rmse<-with(test,sqrt(mean((y-modelo7)^2)))
+rmsemodelos[7,] <- c(7,rmse)
+
+
+modelo8 <- lm("log(y)~age+I(age^2)+I(age^3)+female+(age+I(age^2)+I(age^3)):female ", data=train, weights= w)
+test$modelo8<-predict(modelo8,newdata = test)
+rmse<-with(test,sqrt(mean((y-modelo8)^2)))
+rmsemodelos[8,] <- c(8,rmse)
+
+
+modelo9 <- lm("y~age+I(age^2)+I(age^3)+female+formalinformal+(age+I(age^2)+I(age^3)):female:formalinformal:tenure ", data=train, weights= w)
+test$modelo9<-predict(modelo9,newdata = test)
+rmse<-with(test,sqrt(mean((y-modelo9)^2)))
+rmsemodelos[9,] <- c(9,rmse)
+
+
+relabprivado=unlist(data.frame(train[81]))
+train=cbind(train,relabprivado)
+
+modelo10 <- lm("y~tenure+I(tenure^2)+I(tenure^3)+age+I(age^2)+I(age^3)+female+formalinformal+(age+I(age^2)+I(age^3)+tenure+I(tenure^2)+I(tenure^3)):female:formalinformal", data=train, weights= w)
+test$modelo10<-predict(modelo10,newdata = test)
+rmse<-with(test,sqrt(mean((y-modelo10)^2)))
+rmsemodelos[10,] <- c(10,rmse)
 
 
 #Punto b
+install.packages("caret")
+library("caret")
+
+N=2
+modelos <- numeric(N)
+pred <- numeric(N)
+rmsemodelos2 <- data.frame(modelos, pred)
+names(rmsemodelos2) <- c("modelo", "rmse")
+
+#specify the cross-validation method
+ctrl <- caret::trainControl(method = "LOOCV")
+
+
+loocv=function(fit){
+  h=lm.influence(fit)$h
+  sqrt(mean((residuals(fit)/(1-h))^2))
+}
+
+modelo4 <- lm("y ~ -1+.-w", data=datap3c,method = "lm", weights= w,trControl = ctrl)
+test$modelo4<-predict(modelo4,newdata = test)
+rmse<-with(test,sqrt(mean((y-modelo4)^2)))
+rmsemodelos2[1,] <- c(1,rmse)
+
+modelo5 <- lm("res_y_a~res_s_a-1", data=train, weights= w,trControl = ctrl,
+              method = "null")
+test$modelo5<-predict(modelo5,newdata = test)
+rmse<-with(test,sqrt(mean((res_y_a-modelo5)^2)))
+rmsemodelos2[2,] <- c(2,rmse)
+
+
+remove.packages(rlang)
+
+
+install.packages("rlang")
+
+
 
 library(caret)
 
-#specify the cross-validation method
-ctrl <- trainControl(method = "LOOCV")
+data <- data.frame(x = rnorm(1000, 3, 2), y = 2*x + rnorm(1000))
 
-modelo1<-train(y~z,
-               # specification to fit
-               data = datos_heih,
-               trControl = ctrl,
-               method = "null")
+train(y ~ x, method = "lm", data = data, trControl = trainControl(method = "LOOCV"))
 
-
-modelo1<-train(y~z,
-               # specification to fit
-               data = datos_heih,
-               trControl = ctrl,
-               method = "null")
 
