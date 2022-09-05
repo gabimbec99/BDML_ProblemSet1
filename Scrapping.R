@@ -416,45 +416,47 @@ skim(datap3)
 #Punto A
 modelo2 <- lm("y ~female" , data = datap3, weights= datap3$fweights, x=TRUE ) 
 summary(modelo2)
-stargazer(modelo2)#Para subir a Latex
-stargazer(modelo2, type = "text")#En text
+modelo2robust <- commarobust(modelo2)
+stargazer(modelo2, se=starprep(modelo2robust))#Para subir a Latex
+stargazer(modelo2, se=starprep(modelo2robust), type="text") #En text
 
 # Se encuentran todas las medidas de ajuste del modelo. 
 ajuste2 <- broom::glance(modelo2)
+ajuste2<-data.frame(t(ajuste2))
+stargazer(ajuste1,ajuste2, summary=FALSE,rownames=TRUE,single.row=TRUE,
+          align=TRUE, dep.var.labels=c("Modelo 1","Modelo 2")) #Para ver en R
 #Se encuetran los errores cuadráticos medios 
 mse2= mean(modelo2$residuals^2)
 rtmse2= sqrt(mean(modelo2$residuals^2))
-#Se encuetran los errores cuadráticos medios (manual)
-mse2m= mean((modelo2$model$y - modelo2$fitted.values)^2)
-rtmse2m= sqrt(mean((modelo2$model$y - modelo2$fitted.values)^2))
 
 
 #Punto B
 
-modelo3 <- lm("y ~age+I(age^2)+female+(age+I(age^2)):female" , data = datap3, weights= datap3$fweights, x=TRUE ) 
-
-
-#modelo2 = lm_robust(formula= y ~ female+age+sqage+agefemale+sqagefemale , data = datap1, weights= w, se_type="HC1")
-#summary(modelo2)
-#Queremos obtener de manera homogenea las tablas en stargazer para latex
 modelo3= lm(y ~ female+age+sqage+agefemale+sqagefemale , data = datap3, weights= w, x=TRUE)
-modelo3star_r <- commarobust(modelo2star)
-stargazer(modelo2star, se =starprep(modelo2star_r)) #Para tex
-stargazer(modelo2star, se= starprep(modelo2star_r), type ="text") #Para text
+modelo3robust <- commarobust(modelo3)
+stargazer(modelo3, se =starprep(modelo3robust)) #Para tex
+stargazer(modelo3, se =starprep(modelo3robust), type ="text") #Para text
 
-#Se encuentran los coefficientes y la tabla en latex
-summary(modelo3)
-stargazer(modelo3)#Para subir a Latex
-stargazer(modelo3, type = "text")#En text
 
 # Se encuentran todas las medidas de ajuste del modelo. 
 ajuste3 <- broom::glance(modelo3)
+ajuste3<-data.frame(t(ajuste3))
+ajustetotal <- cbind(ajuste1,ajuste2,ajuste3)
+stargazer(ajustetotal, summary=FALSE,rownames=TRUE,single.row=TRUE,
+          align=TRUE, dep.var.labels=c("Modelo 1","Modelo 2","Modelo 3"), type="text") #Para ver en R
+stargazer(ajustetotal, summary=FALSE,rownames=TRUE,single.row=TRUE,
+          align=TRUE, dep.var.labels=c("Modelo 1","Modelo 2","Modelo 3")) #Para Latex
+
 #Se encuetran los errores cuadráticos medios 
 mse3= mean(modelo3$residuals^2)
 rtmse3= sqrt(mean(modelo3$residuals^2))
-#Se encuetran los errores cuadráticos medios (manual)
-mse3m= mean((modelo3$model$y - modelo3$fitted.values)^2)
-rtmse3m= sqrt(mean((modelo3$model$y - modelo3$fitted.values)^2))
+
+
+#Tengo 3 modelos (Solo edad, género y el que tiene sus interacciones)
+stargazer(modelo1, modelo2, modelo3, title="Regression Results",
+          align=TRUE, dep.var.labels=c("Ingreso-Edad","Ingreso-Género", "Ingreso- Género y Edad"),no.space=TRUE)
+stargazer(modelo1, modelo2, modelo3, title="Regression Results",
+          align=TRUE, dep.var.labels=c("Ingreso-Edad","Ingreso-Género", "Ingreso- Género y Edad"),no.space=TRUE, type="te")
 
 #Punto 3.B(VersiónMatteo para sacar gráfico) -----------------------------
 datosgeih$female <- ifelse(datosgeih$sex==0, "Mujer","Hombre")
