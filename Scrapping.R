@@ -414,22 +414,7 @@ x=datap1[, c("female","age","sqage","agefemale", "sqagefemale")]
 datap3 =cbind(y,x,w)
 datap3= data.frame(datap3)
 skim(datap3)
-#modelo2 = lm_robust(formula= y ~ female+age+sqage+agefemale+sqagefemale , data = datap1, weights= w, se_type="HC1")
-#summary(modelo2)
-#Queremos obtener de manera homogenea las tablas en stargazer para latex
-modelo2star= lm(y ~ female+age+sqage+agefemale+sqagefemale , data = datap3, weights= w, x=TRUE)
-modelo2star_r <- commarobust(modelo2star)
-stargazer(modelo2star, se =starprep(modelo2star_r)) #Para tex
-stargazer(modelo2star, se= starprep(modelo2star_r), type ="text") #Para text
 
-###################Punto 3 (VersiónMatteo para sacar gráfico)
-datosgeih$female <- ifelse(datosgeih$sex==0, "Mujer","Hombre")
-
-x=datosgeih[,c('female', 'fweight','age')]
-y=datosgeih[,c('ingtotes')]
-datap3 =cbind(y,x)
-datap3= data.frame(datap3)
-datap3$female <- as.character(datap3$female)
 
 #Punto A
 modelo2 <- lm("y ~female" , data = datap3, weights= datap3$fweights, x=TRUE ) 
@@ -452,6 +437,15 @@ rtmse2m= sqrt(mean((modelo2$model$y - modelo2$fitted.values)^2))
 #Con la medida de ingreso total imputado ingtotes
 modelo3 <- lm("y ~age+I(age^2)+female+(age+I(age^2)):female" , data = datap3, weights= datap3$fweights, x=TRUE ) 
 
+
+#modelo2 = lm_robust(formula= y ~ female+age+sqage+agefemale+sqagefemale , data = datap1, weights= w, se_type="HC1")
+#summary(modelo2)
+#Queremos obtener de manera homogenea las tablas en stargazer para latex
+modelo3= lm(y ~ female+age+sqage+agefemale+sqagefemale , data = datap3, weights= w, x=TRUE)
+modelo3star_r <- commarobust(modelo2star)
+stargazer(modelo2star, se =starprep(modelo2star_r)) #Para tex
+stargazer(modelo2star, se= starprep(modelo2star_r), type ="text") #Para text
+
 #Se encuentran los coefficientes y la tabla en latex
 summary(modelo3)
 stargazer(modelo3)#Para subir a Latex
@@ -465,6 +459,15 @@ rtmse3= sqrt(mean(modelo3$residuals^2))
 #Se encuetran los errores cuadráticos medios (manual)
 mse3m= mean((modelo3$model$y - modelo3$fitted.values)^2)
 rtmse3m= sqrt(mean((modelo3$model$y - modelo3$fitted.values)^2))
+
+#Punto 3.B(VersiónMatteo para sacar gráfico) -----------------------------
+datosgeih$female <- ifelse(datosgeih$sex==0, "Mujer","Hombre")
+
+x=datap1[,c('female', 'fweight','age')]
+y=datap1[,c("y1")]
+datap3 =cbind(y,x)
+datap3= data.frame(datap3)
+datap3$female <- as.character(datap3$female)
 
 
 ## graficar solo la linea de ajuste para cada sexo (corregir pesos)
@@ -489,7 +492,7 @@ names(select_if(datap1, is.factor))
 #dummiesfijos <- model.matrix(~ oficio+relab+formal+maxEducLevel+sizeFirm, datap1) %>%
 #  as.data.frame()
 dummiesfijos <- model.matrix(~ oficio+relab+formal, datap1) %>%
-   as.data.frame()
+  as.data.frame()
 datap3c=cbind(dummiesfijos,datap3)
 tenure=datap1[,c('p6426')]
 datap3c=cbind(datap3c,tenure)
@@ -544,52 +547,81 @@ stargazer(modelo3c,modelo4c)
 #Punto 4-----------------------------
 #Punto a
 
-set.seed(10101)
-datos_geih <- datosgeih %>%
-  mutate(holdout= as.logical(1:nrow(datosgeih) %% 
-                               sample(nrow(datosgeih), nrow(datosgeih)*.3))
-  )
+#Punto a
+set.seed(1)
+
+#use 70% of dataset as training set and 30% as test set
+sample <- sample(c(TRUE, FALSE), nrow(datap1), replace=TRUE, prob=c(0.7,0.3))
+train  <- datap1[sample, ]
+test   <- datap1[!sample, ]
+
+#Punto b-Formato general
+
+#Se crea una tabla vacía para almacenar los resultados
+N=12
+modelos <- numeric(N)
+pred <- numeric(N)
+
+rmsemodelos <- data.frame(modelos, pred)
+names(rmsemodelos) <- c("modelo", "rmse")
 
 
-test<-datos_geih[datosgeih$holdout==T,]
-train<-datos_geih[datosgeih$holdout==F,]
+modelo2 <- lm("y1 ~ female", data=train, weights= train$fweight)
+test$modelo2<-predict(modelo2,newdata = test)
+rmse<-with(test,sqrt(mean((y1-modelo2)^2)))
+rmsemodelos[2,] <- c(2,rmse)
 
-#B-Formato general
+modelo3 <- lm("y1 ~age+I(age^2)+female+(age+I(age^2)):female", data=train, weights= train$fweight)
+test$modelo3<-predict(modelo3,newdata = test)
+rmse<-with(test,sqrt(mean((y1-modelo3)^2)))
+rmsemodelos[3,] <- c(3,rmse)
 
-modelo1<-train(y~z,
-               # specification to fit
-               data = datos_heih,
-               trControl = trainControl(method = "cv", number = 5),
-               method = "null")
-
-
-modelo2<-train(y~z,
-               # specification to fit
-               data = datos_heih,
-               trControl = trainControl(method = "cv", number = 5),
-               method = "null")
+modelo4 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
+test$modelo4<-predict(modelo4,newdata = test)
+rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
+rmsemodelos[4,] <- c(4,rmse)
 
 
-modelo3<-train(y~z,
-               # specification to fit
-               data = datos_heih,
-               trControl = trainControl(method = "cv", number = 5),
-               method = "null")
+modelo5 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
+test$modelo4<-predict(modelo4,newdata = test)
+rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
+rmsemodelos[4,] <- c(4,rmse)
+
+modelo6 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
+test$modelo4<-predict(modelo4,newdata = test)
+rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
+rmsemodelos[4,] <- c(4,rmse)
+
+modelo7 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
+test$modelo4<-predict(modelo4,newdata = test)
+rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
+rmsemodelos[4,] <- c(4,rmse)
+
+modelo8 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
+test$modelo4<-predict(modelo4,newdata = test)
+rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
+rmsemodelos[4,] <- c(4,rmse)
 
 
-modelo4<-train(y~z,
-               # specification to fit
-               data = datos_heih,
-               trControl = trainControl(method = "cv", number = 5),
-               method = "null")
+modelo9 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
+test$modelo4<-predict(modelo4,newdata = test)
+rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
+rmsemodelos[4,] <- c(4,rmse)
 
+modelo10 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
+test$modelo4<-predict(modelo4,newdata = test)
+rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
+rmsemodelos[4,] <- c(4,rmse)
 
-modelo5<-train(y~z,
-               # specification to fit
-               data = datos_heih,
-               trControl = trainControl(method = "cv", number = 5),
-               method = "null")
+modelo11 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
+test$modelo4<-predict(modelo4,newdata = test)
+rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
+rmsemodelos[4,] <- c(4,rmse)
 
+modelo12 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
+test$modelo4<-predict(modelo4,newdata = test)
+rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
+rmsemodelos[4,] <- c(4,rmse)
 
 #Punto b
 
@@ -610,8 +642,6 @@ modelo1<-train(y~z,
                data = datos_heih,
                trControl = ctrl,
                method = "null")
-
-
 
 
 
