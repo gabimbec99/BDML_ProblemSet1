@@ -619,6 +619,18 @@ modelo10 <- lm("y~tenure+I(tenure^2)+I(tenure^3)+age+I(age^2)+I(age^3)+female+fo
 test$modelo10<-predict(modelo10,newdata = test)
 rmse<-with(test,sqrt(mean((y-modelo10)^2)))
 rmsemodelos[10,] <- c(10,rmse)
+z<-modelo5$model$res_s_a
+h<-modelo5$fitted.values
+test$modelo5<-predict(modelo5,newdata = test)
+
+#Influential observartions
+ggplot(data=test)+ geom_boxplot(aes(x=test$res_s_a,y=test$modelo5)) +
+  #Arreglar el eje y
+  #Añadir el titulo, subtitulo y caption
+  labs(title= "Modelo 5: FWL observaciones influenciales", subtitle = "Evidence for Colombia", caption="Source: GEIH 2008")+  
+  #Añadir los labels de los ejes
+  xlab("Valores predichos") + ylab("Residuales de la regresión") + theme_bw() 
+
 
 
 #Punto C)
