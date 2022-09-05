@@ -475,8 +475,11 @@ datap3c=cbind(datap3c,tenure)
 modelo3c<-lm("y~ -1+.-w", data=datap3c, weights=w)
 
 #Se encuentran los coefficientes y la tabla en latex
-stargazer(modelo3c,type="text")
-stargazer(modelo3c)
+modelo3crobust <- commarobust(modelo3c)
+stargazer(modelo3c,se=starprep(modelo3crobust),omit=c("oficio*", "relab*","formal"),type="text")
+stargazer(modelo3c, omit=c("oficio*", "relab*","formal"))
+stargazer(modelo3c,se=starprep(modelo3c))
+stargazer(modelo1, modelo2, modelo3, modelo3c, title="Regression Results", align=TRUE,no.space=TRUE,omit=c("oficio*", "relab*","formal"))
 summary(modelo3c)
 
 skim(datap1$clase)
@@ -495,11 +498,11 @@ mres_y_a=mmodelo4$residuals
 mres_s_a=mmodelo4b$residuals
 w_res=datap3c$w
 mdb<-data.frame(mres_y_a,mres_s_a,w_res)
-mmodelo4c<-lm(mres_y_a~mres_s_a-1,mdb, weights=w_res)
+modelo4c<-lm(mres_y_a~mres_s_a-1,mdb, weights=w_res)
 
 #Se encuentran los coefficientes y la tabla en latex(se comprueban que ambos tienen los mismos coeficientes)
-stargazer(modelo3c,modelo4c,type="text")
-stargazer(modelo3c,modelo4c)
+stargazer(modelo3c,modelo4c,omit=c("oficio*", "relab*","formal"),type="text")
+stargazer(modelo3c,modelo4c, omit=c("oficio*", "relab*","formal"))
 
 #Con bootstrap v1 (para errores estandares)
 set.seed(428)
@@ -508,11 +511,11 @@ library(boot)
 #define function to calculate R-squared
 res_function <- function(formula, data, indices) {
   d <- data[indices,] #allows boot to select sample
-  fit <-coef(lm("res_y_a~res_s_a-1", data = d,  weights = w_res))
+  fit <-coef(lm("mres_y_a~mres_s_a-1", data = d,  weights = w_res))
   return(fit) 
 }
 
-reps2 <- boot(data=datap3c, statistic=res_function, R=2000, formula="res_y_a~res_s_a-1", weights = w_res)
+reps2 <- boot(data=datap3c, statistic=res_function, R=2000, formula="mres_y_a~mres_s_a-1", weights = w_res)
 seRBs=apply(reps2$t,2,sd)[1]
 seR=sqrt(diag(vcov(modelo4c)))
 
