@@ -404,9 +404,6 @@ boot.ci(reps, type="basic", index=3) #disp predictor variable`
 
 
 #Punto 3-----------------------------
-#Buscamos una medida del ingreso salarial que logre capturar dinámicas del mercado laboral, y tenga pocas distorsiones frente
-#a por ejemplo, la cantidad de horas que se trabajan
-
 #Modelo y visualización de resultados
 w=datap1[, c("fweight")]
 y= datap1[, "y1"]
@@ -434,7 +431,6 @@ rtmse2m= sqrt(mean((modelo2$model$y - modelo2$fitted.values)^2))
 
 #Punto B
 
-#Con la medida de ingreso total imputado ingtotes
 modelo3 <- lm("y ~age+I(age^2)+female+(age+I(age^2)):female" , data = datap3, weights= datap3$fweights, x=TRUE ) 
 
 
