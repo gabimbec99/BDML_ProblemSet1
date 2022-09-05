@@ -21,6 +21,8 @@ p_load(knitr,kableExtra,here,jtools,ggstance,broom,broom.mixed,skimr)
 p_load(tidyverse,rvest, skimr) # web-scraping
 vignette("rvest")
 
+#Punto A) Data Scrapping
+
 #Se crea una url base sobre la cual pueda iterar el loop del siguiente paso y obtener los datos de cada chunk
 url_base <- paste0("https://ignaciomsarmiento.github.io/GEIH2018_sample/pages/geih_page_", 
                    1:10, ".html")
@@ -42,14 +44,14 @@ for (url in url_base){
 }
 
 
-# B data cleaning
+#Punto B) Data Cleaning
 #Se guardan las observaciones de +18
 datosgeih<- subset(datos_geih, age >= 18)
 
 #write.csv(datosgeih, "D:/noveno semestre/big data/Problem_set1/BDML_ProblemSet1/GEIH_BIG_DATA.csv", row.names=FALSE)
 #datosgeih <- read.csv("D:/noveno semestre/big data/Problem_set1/BDML_ProblemSet1/GEIH_BIG_DATA.csv", row.names=FALSE)
 
-# elegimos las variables que vamos a usar para el problem set: 
+# Se elegen las variables que vamos a usar para el problem set: 
 X1=datosgeih[, c('age','oficio','relab','college','cotPension','fweight', 'formal', 'hoursWorkUsual', 'sex', "clase", "maxEducLevel", "dsi","p6426","sizeFirm","wap")]
 y1= datosgeih[,"y_total_m_ha"]
 y2= datosgeih[,"ingtot"]
@@ -57,7 +59,7 @@ datap1 =cbind(y1,y2,X1)
 datap1= data.frame(datap1)
 
 
-# vamos a cambiar el orden de las variables sexo
+#Se cambia el orden de las variables sexo
 datap1$female <- ifelse(datap1$sex==0, 1,0)
 
 #Teniendo en cuenta los modelos que se deben realizar, en los incisos a continucación  inciso anterior se deben crear las interacciones como nuevas variables
@@ -66,57 +68,57 @@ datap1$agefemale <- datap1$female * datap1$age
 datap1$sqagefemale <- datap1$female * datap1$age^2
 
 
-# limpieza de la base, cambiar las etiquetas y volver las variables factores.
+# En la siguiente sección, se hará limpieza de la base, cambiar las etiquetas y volver las variables factores.
 
-# obtener la tabla de nombres de las variables: 
+# Se obtiene la tabla de nombres de las variables: 
 
 url2 <- 'https://ignaciomsarmiento.github.io/GEIH2018_sample/labels.html'
 labels <- read_html(url2) %>%
   html_table()
-#tomo la tabla de uno de todas las tablas presentes
+#Se toma la tabla de uno de todas las tablas presentes
 labels <- as.data.frame(labels)
 
-# extraer los nombres de las variables de oficios: 
+#Se extraem los nombres de las variables de oficios: 
 
 
 labelsoficio=labels[labels$Variable == 'oficio',]
-# quitar las comillas de la variable levels
+#Se quitan las comillas de la variable levels
 labelsoficio$level <- gsub('"','',as.character(labelsoficio$level))
 oficios <- labelsoficio[["level"]]
 numoficio <- labelsoficio[["values"]]
 
-#relab
+#Se repite el proceso para relab
 labelsrelab=labels[labels$Variable == 'relab',]
 labelsrelab$level <- gsub('"','',as.character(labelsrelab$level))
 relab <- labelsrelab[["level"]]
 numrelab <- labelsrelab[["values"]]
 
-# sizefirm 
+#Se repite el proceso para sizefirm 
 labelsfirma=labels[labels$Variable == 'sizeFirm',]
 firma <- labelsfirma[["level"]]
 numfirma <- labelsfirma[["values"]]
 
-# max educ level 
+#Se repite el proceso para max educ level 
 labelseduc=labels[labels$Variable == 'maxEducLevel',]
 educ <- labelseduc[["level"]]
 numeduc <- labelseduc[["values"]]
 
 
-# relabel de los oficios
+#Se hace relabel de los oficios
 datap1 <- datap1 %>% 
   mutate(oficio = recode(oficio, !!!(set_names(oficios, numoficio)), .default = NA_character_))
-# relabel de los relab
+#Se hace relabel de los relab
 datap1 <- datap1 %>% 
   mutate(relab = recode(relab, !!!(set_names(relab,numrelab)), .default = NA_character_))
-# relab del tamano de la firma
+#Se hace relab del tamano de la firma
 datap1 <- datap1 %>% 
   mutate(sizeFirm = recode(sizeFirm, !!!(set_names(firma, numfirma)), .default = NA_character_))
-# relab maxeduc
+#Se hace relab maxeduc
 datap1 <- datap1 %>% 
   mutate(maxEducLevel = recode(maxEducLevel, !!!(set_names(c("Ninguno","Prescolar","Primaria Completa","Primaria Incompleta", "Secundaria Completa","secundaria Incompleta","Terciaria", "NAN"), numeduc)), .default = NA_character_))
 
 
-# otros relab
+#Se hacen otros relabs
 datap1 <- datap1 %>% 
   mutate(formal = recode(formal, !!!(set_names(c("informal","formal"), 0:1)), .default = NA_character_))
 
@@ -138,7 +140,7 @@ datap1 <- datap1 %>%
 datap1 <- datap1 %>% 
   mutate(dsi = recode(dsi, !!!(set_names(c("Otra cosa","Desempleado"), 0:1)), .default = NA_character_))
 
-# convertir las variables en factores. 
+#Se convierten las variables en factores. 
 variables_chr <- names(select_if(datap1, is.character))
 
 for (v in variables_chr) {
@@ -148,37 +150,35 @@ for (v in variables_chr) {
 glimpse(datap1)
 estadisticas <- skim(datap1)
 stargazer(datap1, type="text")
-# imputacion de las variables omitidas. 
 
-# no se puede imputar las variables omitidas porque estan autocorrelacionadas. 
+#Con respecto, a la imputacion de las variables omitidas. 
+# Idealmente, no se debe imputar las variables omitidas porque estan autocorrelacionadas. 
 # la variable y la literatura economica enuncia que no es bueno imputarla .
 
-# ver los missing values y omitirlos 
+#Se ven los missing values y los omitimos 
 colSums(is.na(datap1))
 datap1 <- na.omit(datap1)
 colSums(is.na(datap1))
-
 #Ya no tiene missing values. 
 
 
-# estadisticas descriptivas. 
+#Estadisticas Descriptivas. 
 
-# variables numericas
+#Variables numericas
 variables_numericas <- names(select_if(datap1, is.numeric))
 df_numeric=datap1[,variables_numericas]
 
 df1_summary<-as.data.frame(apply(df_numeric,2,summary))
 df1_summary
 
-write_excel_csv(estadisticas_numericas, "airbnb_summary.csv")
 
-# variables factores. 
-#install.packages("ggplot2")
-#install.packages("waffle")
-
+#Se llaman los siguientes paquetes y librerias para los gráficos:
+install.packages("ggplot2")
+install.packages("waffle")
 library(ggplot2)
 library(waffle)
 
+#Variables factores. 
 int<-table(datap1$maxEducLevel)
 int2<-table(datap1$female)
 int3<-table(datap1$sizeFirm)
@@ -196,7 +196,8 @@ waffle(int3/100, rows=7, size=0.8, title="Tamaño de la firma donde trabajan los
 
 
 # Algunas gráficas relevantes
-##### boxplot
+
+#Boxplot (1)
 
 ggplot(datap1, aes(x=relab,y=y1, color=female))+ geom_boxplot() +
   #Arreglar el eje y
@@ -210,7 +211,7 @@ ggplot(datap1, aes(x=relab,y=y1, color=female))+ geom_boxplot() +
 
 datap1$oficio <- as.character(datap1$oficio)
 
-# grafica 2 
+#Boxplot (2)
 
 ggplot(datap1, aes(x=oficio,y=y1))+ geom_boxplot() +
   #Arreglar el eje y
@@ -236,8 +237,7 @@ ggplot(datap1, aes(x=y1)) +
 
 
 
-#Punto 2-----------------------------
-
+# Punto 2 -------------------------------------------------
 
 #Para comernzar, vamos a seleccionar aquellas variables más relevantes para el análisis
 x=datap1[, c('age')]
@@ -248,58 +248,57 @@ datap2= data.frame(datap2)
 
 
 
-#Punto a
+#Punto A)
 #Dado el enfoque de nuestro trabajo, se tomará la variable de ___, por las siguientes razones;
 #Se observa como están distribuídos los ingresos a lo largo de la muestra (para los valores de edad) 
 ggplot(data=datap2 ,aes(x,y)) + geom_point(color="#00C0AF") + 
-  #Arreglar el eje x
+  #Se arregla el eje x
   scale_x_continuous(n.breaks=10, limits=c(18,87)) + 
-  #Arreglar el eje y
+  #Se arregla el eje y
   scale_y_continuous(n.breaks=8,labels=scales::dollar) + 
-  #Añadir el titulo, subtitulo y caption
+  #Se añade el titulo, subtitulo y caption
   labs(title= "Relacion entre ingreso laboral y edad", subtitle = "Evidencia para Colombia", caption="Fuente: GEIH 2008")+  
-  #Añadir los labels de los ejes
+  #Se añade los labels de los ejes
   xlab("Edad") + ylab("Ingreso laboral por hora") + theme_bw()
 
 
-#Punto b
+#Punto B)
 # A continuación, se estima el modelo base con los pesos ponderados de cada observación sea presentativa de la población
-modelo1 <- lm("y ~ age + sqage", data=datap1, weights= fweight, x=TRUE )
-modelo1_r <- commarobust(modelo1)
-stargazer(modelo1, se=starprep(modelo1_r)) #Para tex
-stargazer(modelo1,se=starprep(modelo1_r), type ="text") #Para text
+modelo1 <- lm("y ~ x + I(x^2)", data=datap2, weights= w, x=TRUE )
+stargazer(modelo1) #Para tex
+stargazer(modelo1, type ="text") #Para text
 
 
-#Punto c
+#Punto C)
 # Se encuentran todas las medidas de ajuste del modelo. 
 ajuste1 <- broom::glance(modelo1)
-ajuste1<-data.frame(t(ajuste1))
-stargazer(ajuste1, summary=FALSE,rownames=TRUE)
 #Se encuetran los errores cuadráticos medios 
 mse1= mean(modelo1$residuals^2)
 rtmse1= sqrt(mean(modelo1$residuals^2))
+#Se encuetran los errores cuadráticos medios (manual)
+mse1m= mean((modelo1$model$y - modelo1$fitted.values)^2)
+rtmse1m= sqrt(mean((modelo1$model$y - modelo1$fitted.values)^2))
 
-#Punto d
+#Punto D)
 ##Discusion Peak Ages: Boostrap sobre peak ages
-peakage=50
 
 #Sin bootstrap
 predict(modelo1, list(X = peakage), interval = "c")
 
-#Con bootstrap v1
+#Con bootstrap v1(paquete boots)
 set.seed(428)
 library(boot)
 
-#define function to calculate R-squared
+#Se dfine función para guardar coeficientes del bootstrap
 coef_function <- function(formula, data, indices) {
-  d <- data[indices,] #allows boot to select sample
+  d <- data[indices,] 
   fit <-coef(lm(y ~ x + I(x^2), data = d,  weights = w))
-  #fit regression model
   return(fit) 
 }
-#perform bootstrapping with 2000 replications
+
+#Se utiliza el paquete boots
 reps <- boot(data=datap2, statistic=coef_function, R=2000, formula=y ~ x + I(x^2), weights = w)
-#Usar errores estandares para estimar los intervalos de confianza
+#Usar errores estandares para estimar los intervalos de confianza y construir manuealmente los intervalos
 x=datap1[, c('age')]
 boots <- data.frame(x)
 boots$x2 <-boots$x^2
@@ -308,9 +307,9 @@ seI=apply(reps$t,2,sd)[1]
 seX=apply(reps$t,2,sd)[2]
 seX2=apply(reps$t,2,sd)[3]
 
-I=apply(reps$t,2,mean)[1]
-x=apply(reps$t,2,mean)[2]
-x2=apply(reps$t,2,mean)[3]
+#I=apply(reps$t,2,mean)[1]
+#x=apply(reps$t,2,mean)[2]
+#x2=apply(reps$t,2,mean)[3]
 
 I=reps$t0[1]
 x=reps$t0[2]
@@ -329,7 +328,7 @@ yhatu3=bIu+bxu*boots$x+bx2u*boots$x2
 
 bootsic <- cbind(boots,yhatl3,yhatu3)
 
-#Con bootstrap v2
+#Con bootstrap v2(con boot.ci)
 
 lboundsi= boot.ci(reps,type="basic",index=1)$basic[4]
 uboundsi=boot.ci(reps,type="basic",index=1)$basic[5]
@@ -345,7 +344,7 @@ yhatu2=uboundsi+uboundsx*boots$x+uboundsx2*boots$x2
 
 bootsic <- cbind(bootsic,yhatl2,yhatu2)
 
-#Con bootstrap v3
+#Con bootstrap v3 (de forma manual para x=50)
 n<-nrow(modelo1$model)
 B <- 10000
 pred <- numeric(B)
@@ -371,7 +370,7 @@ names(boots) <- c("fit", "lwr", "upr")
 
 icbt <- rbind(matriz,boots)
 
-## Se gráfican los valores predichos con los ajustes de pesos ponderados
+## Se gráfican los valores predichos con los ajustes de pesos ponderados (en base a la versión 1 del bootstrap)
 ggplot(data=datap2 ,aes(x,y)) + stat_smooth(method = "lm", formula = "y ~ x + I(x^2)", size = 1, color = "red", aes(weight = w)) + 
   geom_ribbon(data=bootsic,aes(ymin=yhatl3,ymax=yhatu3), alpha=0.1, fill = "steelblue2")+
   # Arreglando el eje x
@@ -384,27 +383,10 @@ ggplot(data=datap2 ,aes(x,y)) + stat_smooth(method = "lm", formula = "y ~ x + I(
   xlab("Age") + ylab("Income salaried + Independents Total - Nominal hourly") + theme_bw()
 
 
+# Punto 2 -------------------------------------------------
+#Se busca una medida del ingreso salarial que logre capturar dinámicas del mercado laboral, y tenga pocas distorsiones frente
+#a por ejemplo, la cantidad de horas que se trabajan
 
-######### probar el paquete a ver si da lo mismo ################
-
-set.seed(0)
-library(boot)
-
-#define function to calculate R-squared
-coef_function <- function(formula, data, indices) {
-  d <- data[indices,] #allows boot to select sample
-  fit <- lm(formula, data=d) #fit regression model
-  return(coef(fit)) #return R-squared of model
-}
-#perform bootstrapping with 2000 replications
-reps <- boot(data=datap2, statistic=coef_function, R=1000, formula=y ~ x + I(x^2))
-reps
-boot.ci(reps, type="basic", index=1) #disp predictor variable`
-boot.ci(reps, type="basic", index=2) #disp predictor variable`
-boot.ci(reps, type="basic", index=3) #disp predictor variable`
-
-
-#Punto 3-----------------------------
 #Modelo y visualización de resultados
 w=datap1[, c("fweight")]
 y= datap1[, "y1"]
@@ -414,69 +396,45 @@ datap3= data.frame(datap3)
 skim(datap3)
 
 
-#Punto A
+#Punto A)
 modelo2 <- lm("y ~female" , data = datap3, weights= datap3$fweights, x=TRUE ) 
 summary(modelo2)
-modelo2robust <- commarobust(modelo2)
-stargazer(modelo2, se=starprep(modelo2robust))#Para subir a Latex
-stargazer(modelo2, se=starprep(modelo2robust), type="text") #En text
+stargazer(modelo2)#Para subir a Latex
+stargazer(modelo2, type = "text")#En text
 
 # Se encuentran todas las medidas de ajuste del modelo. 
 ajuste2 <- broom::glance(modelo2)
-ajuste2<-data.frame(t(ajuste2))
-stargazer(ajuste1,ajuste2, summary=FALSE,rownames=TRUE,single.row=TRUE,
-          align=TRUE, dep.var.labels=c("Modelo 1","Modelo 2")) #Para ver en R
 #Se encuetran los errores cuadráticos medios 
 mse2= mean(modelo2$residuals^2)
 rtmse2= sqrt(mean(modelo2$residuals^2))
+#Se encuetran los errores cuadráticos medios (manual)
+mse2m= mean((modelo2$model$y - modelo2$fitted.values)^2)
+rtmse2m= sqrt(mean((modelo2$model$y - modelo2$fitted.values)^2))
 
 
-#Punto B
+#Punto B)
 
-modelo3= lm("y ~ female+age+sqage+agefemale+sqagefemale" , data = datap3, weights= w, x=TRUE)
-modelo3robust <- commarobust(modelo3)
-stargazer(modelo3, se =starprep(modelo3robust)) #Para tex
-stargazer(modelo3, se =starprep(modelo3robust), type ="text") #Para text
+#Se adiciona a la especificación del modelo no condicionado las variables de edad
+modelo3= lm(y ~ female+age+sqage+agefemale+sqagefemale , data = datap3, weights= w, x=TRUE)
 
+#Se encuentran los coefficientes y la tabla en latex
+summary(modelo3)
+stargazer(modelo3)#Para subir a Latex
+stargazer(modelo3, type = "text")#En text
 
 # Se encuentran todas las medidas de ajuste del modelo. 
 ajuste3 <- broom::glance(modelo3)
-ajuste3<-data.frame(t(ajuste3))
-
 #Se encuetran los errores cuadráticos medios 
 mse3= mean(modelo3$residuals^2)
 rtmse3= sqrt(mean(modelo3$residuals^2))
+#Se encuetran los errores cuadráticos medios (manual)
+mse3m= mean((modelo3$model$y - modelo3$fitted.values)^2)
+rtmse3m= sqrt(mean((modelo3$model$y - modelo3$fitted.values)^2))
 
 
-#Tengo 3 modelos (Solo edad, género y el que tiene sus interacciones)
-#Reporte de coeficientes
-stargazer(modelo1, modelo2, modelo3, title="Regression Results",
-          align=TRUE,no.space=TRUE, se=starprep(modelo1_r,modelo2robust,modelo3robust))
-stargazer(modelo1, modelo2, modelo3, title="Regression Results",
-          align=TRUE,no.space=TRUE,se=starprep(modelo1_r,modelo2robust,modelo3robust), type="text")
-
-#Medidas de ajuste 
-ajustetotal <- cbind(ajuste1,ajuste2,ajuste3)
-stargazer(ajustetotal, summary=FALSE,rownames=TRUE,single.row=TRUE,
-          align=TRUE, dep.var.labels=c("Modelo 1","Modelo 2","Modelo 3"), type="text") #Para ver en R
-stargazer(ajustetotal, summary=FALSE,rownames=TRUE,single.row=TRUE,
-          align=TRUE, dep.var.labels=c("Modelo 1","Modelo 2","Modelo 3")) #Para Latex
-
-
-#Punto 3.B(VersiónMatteo para sacar gráfico) -----------------------------
-datosgeih$female <- ifelse(datosgeih$sex==0, "Mujer","Hombre")
-
-x=datap1[,c('female', 'fweight','age')]
-y=datap1[,c("y1")]
-datap3 =cbind(y,x)
-datap3= data.frame(datap3)
-datap3$female <- as.character(datap3$female)
-
-
-## graficar solo la linea de ajuste para cada sexo (corregir pesos)
-
+##Se grafica solo la linea de ajuste para cada sexo
 ggplot(data=datap3 ,aes(x=age,y=y,col=female)) +
-  stat_smooth(method = "lm", formula="y ~x+I(x^2)", aes(weight=datap3$fweight)) + 
+  stat_smooth(method = "lm", formula="y ~x+I(x^2)", aes(weight=w)) + 
   # arreglando el eje x
   scale_x_continuous(n.breaks=10, limits=c(18,87)) + 
   # Arreglar el eje y
@@ -486,7 +444,7 @@ ggplot(data=datap3 ,aes(x=age,y=y,col=female)) +
   # anadir los labels de los ejes
   xlab("Edad") + ylab("Salario") + theme_bw()
 
-# Punto C
+# Punto C)
 #Las variables que permiten capturar alguna noción de la ocupación de los colombianos, son oficio, relab y la formalidad
 #que establecen respectivamente el oficio (dentro de categorías amplias) y  la relación laboral que ocupan (Empleado del gobierno, de empresas privadas) junto con si es de caracter formal o informal.
 #Adicionalmente, la naturaleza del trabajo estará condicionado al tamaño de la empresa, el nivel de educación de los individuos y su experiencia o antiguedad en su trabajo.
@@ -500,10 +458,10 @@ datap3c=cbind(dummiesfijos,datap3)
 tenure=datap1[,c('p6426')]
 datap3c=cbind(datap3c,tenure)
 
-sapply(lapply(dummiesfijos, unique), length)
-sapply(lapply(datap1$oficio, unique), length)
+#Modelo completo
 modelo3c<-lm("y~ -1+.-w", data=datap3c, weights=w)
 
+#Se encuentran los coefficientes y la tabla en latex
 stargazer(modelo3c,type="text")
 stargazer(modelo3c)
 summary(modelo3c)
@@ -511,34 +469,37 @@ summary(modelo3c)
 skim(datap1$clase)
 skim(datosgeih$clase)
 
+
+#Modelos parcializados
+x=datap1[, c("female","age","sqage","agefemale", "sqagefemale")]
 datacontroles=cbind(dummiesfijos,tenure,x,w)
 
-modelo4<-lm("y~ -1+.-tenure-w",data=datap3c, weights=w)
-modelo4b <-lm("tenure~.-w",data=datacontroles, weights=w)
+mmodelo4<-lm("y~ -1+.-tenure-w",data=datap3c, weights=w)
+mmodelo4b <-lm("tenure~.-w",data=datacontroles, weights=w)
 
-stargazer(modelo4,type="text")
 
-res_y_a=modelo4$residuals
-res_s_a=modelo4b$residuals
+mres_y_a=mmodelo4$residuals
+mres_s_a=mmodelo4b$residuals
 w_res=datap3c$w
-db<-data.frame(res_y_a,res_s_a,w)
-modelo4c<-lm(res_y_a~res_s_a-1,db, weights=w)
+mdb<-data.frame(mres_y_a,mres_s_a,w_res)
+mmodelo4c<-lm(mres_y_a~mres_s_a-1,mdb, weights=w_res)
+
+#Se encuentran los coefficientes y la tabla en latex(se comprueban que ambos tienen los mismos coeficientes)
 stargazer(modelo3c,modelo4c,type="text")
 stargazer(modelo3c,modelo4c)
 
-#Con bootstrap v1
+#Con bootstrap v1 (para errores estandares)
 set.seed(428)
 library(boot)
 
 #define function to calculate R-squared
 res_function <- function(formula, data, indices) {
   d <- data[indices,] #allows boot to select sample
-  fit <-coef(lm("res_y_a~res_s_a-1", data = d,  weights = w))
+  fit <-coef(lm("res_y_a~res_s_a-1", data = d,  weights = w_res))
   return(fit) 
 }
 
-#perform bootstrapping with 2000 replications
-reps2 <- boot(data=datap3c, statistic=res_function, R=2000, formula="res_y_a~res_s_a-1", weights = w)
+reps2 <- boot(data=datap3c, statistic=res_function, R=2000, formula="res_y_a~res_s_a-1", weights = w_res)
 seRBs=apply(reps2$t,2,sd)[1]
 seR=sqrt(diag(vcov(modelo4c)))
 
@@ -548,18 +509,18 @@ stargazer(modelo3c,modelo4c)
 
 
 #Punto 4-----------------------------
-#Punto a
 
-#Punto a
+
+#Punto A)
 set.seed(1)
 
-#use 70% of dataset as training set and 30% as test set
+#Se splitea la muestra
 sample <- sample(c(TRUE, FALSE), nrow(datap3c), replace=TRUE, prob=c(0.7,0.3))
 train  <- datap3c[sample, ]
 test   <- datap3c[!sample, ]
 
-#Punto b-Formato general
-
+#Punto B)
+#Comparación de medidas de ajuste
 #Se crea una tabla vacía para almacenar los resultados
 N=10
 modelos <- numeric(N)
@@ -644,9 +605,8 @@ rmse<-with(test,sqrt(mean((y-modelo10)^2)))
 rmsemodelos[10,] <- c(10,rmse)
 
 
-#Punto b
-install.packages("caret")
-library("caret")
+#Punto C)
+#Se hace la metodología de LOOCV
 
 N=2
 modelos <- numeric(N)
@@ -654,38 +614,37 @@ pred <- numeric(N)
 rmsemodelos2 <- data.frame(modelos, pred)
 names(rmsemodelos2) <- c("modelo", "rmse")
 
-#specify the cross-validation method
-ctrl <- caret::trainControl(method = "LOOCV")
 
+loocvrmse1 <- NULL
+for(i in 1:nrow(datap3c)){
+  #you did this part right
+  testcv<-datap3c[i,]
+  traincv<-datap3c[-i,]
+  modelo4<-lm("y ~ -1+.-w", data=traincv, weights= w)
+  testcv$modelo4<-predict(modelo4,newdata = testcv)
+  rmse<-with(testcv,sqrt((y-modelo4)^2))
+  loocvrmse1[i]<-rmse}
+  
+rmsemodelos2[1,] <- c(1,mean(loocvrmse1))
 
-loocv=function(fit){
-  h=lm.influence(fit)$h
-  sqrt(mean((residuals(fit)/(1-h))^2))
-}
+modelo4b<-lm("y~ -1+.-tenure-w",data=datap3c, weights=w)
+modelo4c <-lm("tenure~.-w-y",data=datap3c, weights=w)
 
-modelo4 <- lm("y ~ -1+.-w", data=datap3c,method = "lm", weights= w,trControl = ctrl)
-test$modelo4<-predict(modelo4,newdata = test)
-rmse<-with(test,sqrt(mean((y-modelo4)^2)))
-rmsemodelos2[1,] <- c(1,rmse)
+res_y_a=modelo4b$residuals
+res_s_a=modelo4c$residuals
 
-modelo5 <- lm("res_y_a~res_s_a-1", data=train, weights= w,trControl = ctrl,
-              method = "null")
-test$modelo5<-predict(modelo5,newdata = test)
-rmse<-with(test,sqrt(mean((res_y_a-modelo5)^2)))
-rmsemodelos2[2,] <- c(2,rmse)
+datap3c<-cbind(datap3c,res_y_a,res_s_a)
 
+loocvrmse2 <- NULL
+for(i in 1:nrow(datap3c)){
+  #you did this part right
+  testcv<-datap3c[i,]
+  traincv<-datap3c[-i,]
+  modelo5<-lm("res_y_a~res_s_a-1", data=traincv, weights= w)
+  testcv$modelo5<-predict(modelo5,newdata = testcv)
+  rmse<-with(testcv,sqrt((y-modelo5)^2))
+  loocvrmse2[i]<-rmse}
+rmsemodelos2[2,] <- c(2,mean(loocvrmse2))
 
-remove.packages(rlang)
-
-
-install.packages("rlang")
-
-
-
-library(caret)
-
-data <- data.frame(x = rnorm(1000, 3, 2), y = 2*x + rnorm(1000))
-
-train(y ~ x, method = "lm", data = data, trControl = trainControl(method = "LOOCV"))
 
 
