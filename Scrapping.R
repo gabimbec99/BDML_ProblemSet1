@@ -272,12 +272,11 @@ stargazer(modelo1, type ="text") #Para text
 #Punto c
 # Se encuentran todas las medidas de ajuste del modelo. 
 ajuste1 <- broom::glance(modelo1)
+ajuste1<-data.frame(t(ajuste1))
+stargazer(ajuste1, summary=FALSE,rownames=TRUE)
 #Se encuetran los errores cuadráticos medios 
 mse1= mean(modelo1$residuals^2)
 rtmse1= sqrt(mean(modelo1$residuals^2))
-#Se encuetran los errores cuadráticos medios (manual)
-mse1m= mean((modelo1$model$y - modelo1$fitted.values)^2)
-rtmse1m= sqrt(mean((modelo1$model$y - modelo1$fitted.values)^2))
 
 #Punto d
 ##Discusion Peak Ages: Boostrap sobre peak ages
