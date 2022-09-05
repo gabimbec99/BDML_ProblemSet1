@@ -4,9 +4,9 @@
 # Punto 1 -------------------------------------------------
 
 #Antes de comenzar, es necesario installar y cargar aquellos paquetes y librerías útiles para nuestro desarrollo.De tal forma:
-#install.packages("stargazer")
-#install.packages("sandwich")
-#install.packages("estimatr")
+install.packages("stargazer")
+install.packages("sandwich")
+install.packages("estimatr")
 library(pacman)
 library(rvest, tidyverse)
 library (dplyr)
@@ -48,11 +48,20 @@ browseURL("https://ignaciomsarmiento.github.io/robots.txt")
 # B data cleaning
 #Se guardan las observaciones de +18
 datosgeih<- subset(datos_geih, age >= 18)
+<<<<<<< Updated upstream
 #write.csv(datap1, "/Users/gabrielamejia/Desktop/ANDES/2022-2/ECONOMETRIA AVANZADA/GEIH_BIG_DATA.csv", row.names=FALSE)
 #datosgeih <- read.csv("D:/noveno semestre/big data/Problem_set1/BDML_ProblemSet1/GEIH_BIG_DATA.csv", row.names=FALSE)
 
 # elegimos las variables que vamos a usar para el problem set: 
 X1=datosgeih[, c('age','oficio','relab','college','cotPension','fweight', 'formal', 'hoursWorkUsual', 'sex', 'depto', "clase", "maxEducLevel", "dsi","p6426","p6580s1","sizeFirm","wap")]
+=======
+
+#write.csv(datosgeih, "D:/noveno semestre/big data/Problem_set1/BDML_ProblemSet1/GEIH_BIG_DATA.csv", row.names=FALSE)
+#datosgeih <- read.csv("D:/noveno semestre/big data/Problem_set1/BDML_ProblemSet1/GEIH_BIG_DATA.csv", row.names=FALSE)
+
+# elegimos las variables que vamos a usar para el problem set: 
+X1=datosgeih[, c('age','oficio','relab','college','cotPension','fweight', 'formal', 'hoursWorkUsual', 'sex', "clase", "maxEducLevel", "dsi","p6426","sizeFirm","wap")]
+>>>>>>> Stashed changes
 y1= datosgeih[,"y_total_m_ha"]
 y2= datosgeih[,"ingtot"]
 datap1 =cbind(y1,y2,X1)
@@ -115,7 +124,11 @@ datap1 <- datap1 %>%
   mutate(sizeFirm = recode(sizeFirm, !!!(set_names(firma, numfirma)), .default = NA_character_))
 # relab maxeduc
 datap1 <- datap1 %>% 
+<<<<<<< Updated upstream
   mutate(maxEducLevel = recode(maxEducLevel, !!!(set_names(educ, numeduc)), .default = NA_character_))
+=======
+  mutate(maxEducLevel = recode(maxEducLevel, !!!(set_names(c("Ninguno","Prescolar","Primaria Completa","Primaria Incompleta", "Secundaria Completa","secundaria Incompleta","Terciaria", "NAN"), numeduc)), .default = NA_character_))
+>>>>>>> Stashed changes
 
 
 # otros relab
@@ -133,6 +146,15 @@ datap1 <- datap1 %>%
 
 datap1 <- datap1 %>% 
   mutate(clase = recode(clase, !!!(set_names(c("Rural","Urban"), 0:1)), .default = NA_character_))
+<<<<<<< Updated upstream
+=======
+
+datap1 <- datap1 %>% 
+  mutate(wap = recode(wap, !!!(set_names(c("Otra cosa","Poblacion en edad de trabajar"), 0:1)), .default = NA_character_))
+
+datap1 <- datap1 %>% 
+  mutate(dsi = recode(dsi, !!!(set_names(c("Otra cosa","Desempleado"), 0:1)), .default = NA_character_))
+>>>>>>> Stashed changes
 
 datap1 <- datap1 %>% 
   mutate(wap = recode(wap, !!!(set_names(c("Otra cosa","Poblacion en edad de trabajar"), 0:1)), .default = NA_character_))
@@ -166,7 +188,37 @@ colSums(is.na(datap1))
 
 # estadisticas descriptivas. 
 
-summary(datap1)
+# variables numericas
+variables_numericas <- names(select_if(datap1, is.numeric))
+df_numeric=datap1[,variables_numericas]
+
+df1_summary<-as.data.frame(apply(df_numeric,2,summary))
+df1_summary
+
+write_excel_csv(estadisticas_numericas, "airbnb_summary.csv")
+
+# variables factores. 
+install.packages("ggplot2")
+install.packages("waffle")
+
+library(ggplot2)
+library(waffle)
+
+int<-table(datap1$maxEducLevel)
+int2<-table(datap1$female)
+int3<-table(datap1$sizeFirm)
+
+# Gráfico de waffle
+
+waffle(int/100, rows=7, size=0.8, title="Nivel educativo de los individuos de la muestra", 
+       xlab="1 cuadrado = 100 personas")
+
+waffle(int2/100, rows=5, size=0.8, title="Balance de sexo en los individuos de la muestra", 
+       xlab="1 cuadrado = 100 personas")
+waffle(int3/100, rows=7, size=0.8, title="Tamaño de la firma donde trabajan los empleados", 
+       xlab="1 cuadrado = 100 personas")
+
+
 
 # graficas bonitas
 ##### boxplot
@@ -211,9 +263,15 @@ ggplot(datap1, aes(x=y1)) +
 
 #Punto 2-----------------------------
 
+<<<<<<< Updated upstream
 #Para comenzar, vamos a seleccionar aquellas variables más relevantes para el análisis
 x=datap1[, c('age')]
 y= datap1[, c("y1")]
+=======
+#Para comernzar, vamos a seleccionar aquellas variables más relevantes para el análisis
+x=datap1[, c('age')]
+y= datap1[, "y1"]
+>>>>>>> Stashed changes
 w=datap1[, c("fweight")]
 datap2 =cbind(y,x,w)
 datap2= data.frame(datap2)
@@ -355,6 +413,25 @@ ggplot(data=datap2 ,aes(x,y)) + stat_smooth(method = "lm", formula = "y ~ x + I(
   #Se añaden los labels de los ejes
   xlab("Age") + ylab("Income salaried + Independents Total - Nominal hourly") + theme_bw()
 
+
+
+######### probar el paquete a ver si da lo mismo ################
+
+set.seed(0)
+library(boot)
+
+#define function to calculate R-squared
+coef_function <- function(formula, data, indices) {
+  d <- data[indices,] #allows boot to select sample
+  fit <- lm(formula, data=d) #fit regression model
+  return(coef(fit)) #return R-squared of model
+}
+#perform bootstrapping with 2000 replications
+reps <- boot(data=datap2, statistic=coef_function, R=1000, formula=y ~ x + I(x^2))
+reps
+boot.ci(reps, type="basic", index=1) #disp predictor variable`
+boot.ci(reps, type="basic", index=2) #disp predictor variable`
+boot.ci(reps, type="basic", index=3) #disp predictor variable`
 
 
 #Punto 3-----------------------------
