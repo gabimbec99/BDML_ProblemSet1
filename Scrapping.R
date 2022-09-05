@@ -48,13 +48,6 @@ browseURL("https://ignaciomsarmiento.github.io/robots.txt")
 # B data cleaning
 #Se guardan las observaciones de +18
 datosgeih<- subset(datos_geih, age >= 18)
-<<<<<<< Updated upstream
-#write.csv(datap1, "/Users/gabrielamejia/Desktop/ANDES/2022-2/ECONOMETRIA AVANZADA/GEIH_BIG_DATA.csv", row.names=FALSE)
-#datosgeih <- read.csv("D:/noveno semestre/big data/Problem_set1/BDML_ProblemSet1/GEIH_BIG_DATA.csv", row.names=FALSE)
-
-# elegimos las variables que vamos a usar para el problem set: 
-X1=datosgeih[, c('age','oficio','relab','college','cotPension','fweight', 'formal', 'hoursWorkUsual', 'sex', 'depto', "clase", "maxEducLevel", "dsi","p6426","p6580s1","sizeFirm","wap")]
-=======
 
 #write.csv(datosgeih, "D:/noveno semestre/big data/Problem_set1/BDML_ProblemSet1/GEIH_BIG_DATA.csv", row.names=FALSE)
 #datosgeih <- read.csv("D:/noveno semestre/big data/Problem_set1/BDML_ProblemSet1/GEIH_BIG_DATA.csv", row.names=FALSE)
@@ -124,11 +117,7 @@ datap1 <- datap1 %>%
   mutate(sizeFirm = recode(sizeFirm, !!!(set_names(firma, numfirma)), .default = NA_character_))
 # relab maxeduc
 datap1 <- datap1 %>% 
-<<<<<<< Updated upstream
-  mutate(maxEducLevel = recode(maxEducLevel, !!!(set_names(educ, numeduc)), .default = NA_character_))
-=======
   mutate(maxEducLevel = recode(maxEducLevel, !!!(set_names(c("Ninguno","Prescolar","Primaria Completa","Primaria Incompleta", "Secundaria Completa","secundaria Incompleta","Terciaria", "NAN"), numeduc)), .default = NA_character_))
->>>>>>> Stashed changes
 
 
 # otros relab
@@ -146,15 +135,6 @@ datap1 <- datap1 %>%
 
 datap1 <- datap1 %>% 
   mutate(clase = recode(clase, !!!(set_names(c("Rural","Urban"), 0:1)), .default = NA_character_))
-<<<<<<< Updated upstream
-=======
-
-datap1 <- datap1 %>% 
-  mutate(wap = recode(wap, !!!(set_names(c("Otra cosa","Poblacion en edad de trabajar"), 0:1)), .default = NA_character_))
-
-datap1 <- datap1 %>% 
-  mutate(dsi = recode(dsi, !!!(set_names(c("Otra cosa","Desempleado"), 0:1)), .default = NA_character_))
->>>>>>> Stashed changes
 
 datap1 <- datap1 %>% 
   mutate(wap = recode(wap, !!!(set_names(c("Otra cosa","Poblacion en edad de trabajar"), 0:1)), .default = NA_character_))
@@ -263,15 +243,10 @@ ggplot(datap1, aes(x=y1)) +
 
 #Punto 2-----------------------------
 
-<<<<<<< Updated upstream
-#Para comenzar, vamos a seleccionar aquellas variables más relevantes para el análisis
-x=datap1[, c('age')]
-y= datap1[, c("y1")]
-=======
+
 #Para comernzar, vamos a seleccionar aquellas variables más relevantes para el análisis
 x=datap1[, c('age')]
 y= datap1[, "y1"]
->>>>>>> Stashed changes
 w=datap1[, c("fweight")]
 datap2 =cbind(y,x,w)
 datap2= data.frame(datap2)
