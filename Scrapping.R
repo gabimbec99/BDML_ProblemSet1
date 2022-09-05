@@ -4,9 +4,9 @@
 # Punto 1 -------------------------------------------------
 
 #Antes de comenzar, es necesario installar y cargar aquellos paquetes y librerías útiles para nuestro desarrollo.De tal forma:
-install.packages("stargazer")
-install.packages("sandwich")
-install.packages("estimatr")
+#install.packages("stargazer")
+#install.packages("sandwich")
+#install.packages("estimatr")
 library(pacman)
 library(rvest, tidyverse)
 library (dplyr)
@@ -40,9 +40,6 @@ for (url in url_base){
   #Se realiza un merge de las tablas por filas
   datos_geih<- rbind(datos_geih, temporal)
 }
-
-#Anteriormente, se revisar si tiene alguna restricción: 
-browseURL("https://ignaciomsarmiento.github.io/robots.txt")
 
 
 # B data cleaning
@@ -156,13 +153,12 @@ stargazer(datap1, type="text")
 # no se puede imputar las variables omitidas porque estan autocorrelacionadas. 
 # la variable y la literatura economica enuncia que no es bueno imputarla .
 
-# ver los missing values 
+# ver los missing values y omitirlos 
 colSums(is.na(datap1))
 datap1 <- na.omit(datap1)
 colSums(is.na(datap1))
 
 #Ya no tiene missing values. 
-
 
 
 # estadisticas descriptivas. 
@@ -177,8 +173,8 @@ df1_summary
 write_excel_csv(estadisticas_numericas, "airbnb_summary.csv")
 
 # variables factores. 
-install.packages("ggplot2")
-install.packages("waffle")
+#install.packages("ggplot2")
+#install.packages("waffle")
 
 library(ggplot2)
 library(waffle)
@@ -199,7 +195,7 @@ waffle(int3/100, rows=7, size=0.8, title="Tamaño de la firma donde trabajan los
 
 
 
-# graficas bonitas
+# Algunas gráficas relevantes
 ##### boxplot
 
 ggplot(datap1, aes(x=relab,y=y1, color=female))+ geom_boxplot() +
@@ -233,7 +229,7 @@ datap1$ingtot %>% table(useNA="ifany") %>% prop.table() %>% round(3)*100
 #Histograma simple
 ggplot(datap1, aes(x=y1)) +
   geom_histogram(aes(y=..density..),position="identity", alpha=0.8,fill="#00C0AF")+
-  scale_x_continuous(n.breaks=8,labels=scales::dollar)+
+  scale_x_continuous(n.breaks=8,labels=scales::dollar)+ geom_vline(xintercept = 2403, linetype="dashed", color = "blue", size=0.5)+
   labs(title= "Histograma de ingreso laboral", subtitle = "Evidencia para Colombia", caption="Fuente: GEIH 2008")+  
   #Añadir los labels de los ejes
   xlab("Ingreso laboral") + ylab("Densidad") + theme_bw() 
@@ -255,15 +251,15 @@ datap2= data.frame(datap2)
 #Punto a
 #Dado el enfoque de nuestro trabajo, se tomará la variable de ___, por las siguientes razones;
 #Se observa como están distribuídos los ingresos a lo largo de la muestra (para los valores de edad) 
-ggplot(data=datosgeih ,aes(x,y)) + geom_point() + 
+ggplot(data=datap2 ,aes(x,y)) + geom_point(color="#00C0AF") + 
   #Arreglar el eje x
   scale_x_continuous(n.breaks=10, limits=c(18,87)) + 
   #Arreglar el eje y
   scale_y_continuous(n.breaks=8,labels=scales::dollar) + 
   #Añadir el titulo, subtitulo y caption
-  labs(title= "Relacion entre salario y edad", subtitle = "Evidence for Colombia", caption="Source: GEIH 2008")+  
+  labs(title= "Relacion entre ingreso laboral y edad", subtitle = "Evidencia para Colombia", caption="Fuente: GEIH 2008")+  
   #Añadir los labels de los ejes
-  xlab("Edad") + ylab("Salario por hora") + theme_bw()
+  xlab("Edad") + ylab("Ingreso laboral por hora") + theme_bw()
 
 
 #Punto b
