@@ -48,7 +48,7 @@ browseURL("https://ignaciomsarmiento.github.io/robots.txt")
 # B data cleaning
 #Se guardan las observaciones de +18
 datosgeih<- subset(datos_geih, age >= 18)
-#write.csv(datosgeih, "D:/noveno semestre/big data/Problem_set1/BDML_ProblemSet1/GEIH_BIG_DATA.csv", row.names=FALSE)
+#write.csv(datap1, "/Users/gabrielamejia/Desktop/ANDES/2022-2/ECONOMETRIA AVANZADA/GEIH_BIG_DATA.csv", row.names=FALSE)
 #datosgeih <- read.csv("D:/noveno semestre/big data/Problem_set1/BDML_ProblemSet1/GEIH_BIG_DATA.csv", row.names=FALSE)
 
 # elegimos las variables que vamos a usar para el problem set: 
@@ -61,6 +61,12 @@ datap1= data.frame(datap1)
 
 # vamos a cambiar el orden de las variables sexo
 datap1$female <- ifelse(datap1$sex==0, 1,0)
+
+#Teniendo en cuenta los modelos que se deben realizar, en los incisos a continucación  inciso anterior se deben crear las interacciones como nuevas variables
+datap1$sqage <- datap1$age^2
+datap1$agefemale <- datap1$female * datap1$age
+datap1$sqagefemale <- datap1$female * datap1$age^2
+
 
 # limpieza de la base, cambiar las etiquetas y volver las variables factores.
 
@@ -151,7 +157,7 @@ glimpse(datap1)
 
 # ver los missing values 
 colSums(is.na(datap1))
-data_punto1 <- na.omit(datap1)
+datap1 <- na.omit(datap1)
 colSums(is.na(datap1))
 
 #Ya no tiene missing values. 
@@ -273,18 +279,15 @@ var(fit.b$fitted.values)
 #Punto 3-----------------------------
 #Buscamos una medida del ingreso salarial que logre capturar dinámicas del mercado laboral, y tenga pocas distorsiones frente
 #a por ejemplo, la cantidad de horas que se trabajan
-#Como se encuentra en la base, la dirección de la dummy está "al revés" se crea la variable female
-datap1$sqage <- datap1$age^2
-#Teniendo en cuenta el modelo del inciso anterior se deben crear las interacciones como nuevas variables
-datap1$agefemale <- datap1$female * datap1$age
-datap1$sqagefemale <- datap1$female * datap1$age^2
 
 #Modelo y visualización de resultados
+w=datap1[, c("fweight")]
+y= datap1[, "y1"]
 x=datap1[, c("female","age","sqage","agefemale", "sqagefemale")]
-datap3 =cbind(y1,x,w)
+datap3 =cbind(y,x,w)
 datap3= data.frame(datap3)
 skim(datap3)
-#modelo2 = lm_robust(formula= y ~ female+age+sqage+agefemale+sqagefemale , data = datap3, weights= w, se_type="HC1")
+#modelo2 = lm_robust(formula= y ~ female+age+sqage+agefemale+sqagefemale , data = datap1, weights= w, se_type="HC1")
 #summary(modelo2)
 #Queremos obtener de manera homogenea las tablas en stargazer para latex
 modelo2star= lm(y ~ female+age+sqage+agefemale+sqagefemale , data = datap3, weights= w, x=TRUE)
@@ -352,25 +355,43 @@ ggplot(data=datap3 ,aes(x=age,y=y,col=female)) +
 
 # Punto C
 #Las variables que permiten capturar alguna noción de la ocupación de los colombianos, son oficio, relab y la formalidad
-#que establecen respectivamente el oficio (dentro de categorías amplias) y  la relación laboral que ocupan (Empleado del gobierno, de empresas privadas) junto con si es de caracter formal o informal
+#que establecen respectivamente el oficio (dentro de categorías amplias) y  la relación laboral que ocupan (Empleado del gobierno, de empresas privadas) junto con si es de caracter formal o informal.
+#Adicionalmente, la naturaleza del trabajo estará condicionado al tamaño de la empresa, el nivel de educación de los individuos y su experiencia o antiguedad en su trabajo.
 names(select_if(datap1, is.factor))
-#Dumificamos para poder condicional
+#Dumificamos para poder condicionar las variables que se encuentran como factores con 2 o mas categorías
+#dummiesfijos <- model.matrix(~ oficio+relab+formal+maxEducLevel+sizeFirm, datap1) %>%
+#  as.data.frame()
 dummiesfijos <- model.matrix(~ oficio+relab+formal, datap1) %>%
-  as.data.frame()
+   as.data.frame()
 datap3c=cbind(dummiesfijos,datap3)
+tenure=datap1[,c('p6426')]
+datap3c=cbind(datap3c,tenure)
 
+sapply(lapply(dummiesfijos, unique), length)
+sapply(lapply(datap1$oficio, unique), length)
+modelo3c<-lm("y~ -1+.-w", data=datap3c, weights=w)
 
-x=datosgeih[,c("college","formal","oficio",'female', 'fweight','age')]
+stargazer(modelo3c,type="text")
+stargazer(modelo3c)
+summary(modelo3c)
 
-modelo4<-lm(l~x,db)
+skim(datap1$clase)
+skim(datosgeih$clase)
+
+datacontroles=cbind(dummiesfijos,tenure,x,w)
+
+modelo4<-lm("y~ -1+.-tenure-w",data=datap3c, weights=w)
+modelo4b <-lm("tenure~.-w",data=datacontroles, weights=w)
+
 stargazer(modelo4,type="text")
 
-db<-db %>% mutate(res_y_a=lm(l~x,db)$residuals, #Residuals of logwage~ability (we are "purging" ability)
-                  res_s_a=lm(formal~oficio+formal,db)$residuals, #Residuals of schooling~ability (we are "purging" ability)
-)
-
-reg2<-lm(res_y_a~res_s_a-1,db)
-stargazer(reg1,reg2,type="text")
+res_y_a=modelo4$residuals
+res_s_a=modelo4b$residuals
+w_res=datap3c$w
+db<-data.frame(res_y_a,res_s_a,w)
+modelo4c<-lm(res_y_a~res_s_a-1,db, weights=w)
+stargazer(modelo3c,modelo4c,type="text")
+stargazer(modelo3c,modelo4c)
 
 
 #Punto 4-----------------------------
