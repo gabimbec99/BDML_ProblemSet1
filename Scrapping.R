@@ -248,6 +248,7 @@ rtmse1m= sqrt(mean((modelo1$model$y - modelo1$fitted.values)^2))
 #Punto d
 ## Se gráfican los valores predichos con los ajustes de pesos ponderados
 ggplot(data=datap2 ,aes(x,y)) + stat_smooth(method = "lm", formula = "y ~ x + I(x^2)", size = 1, color = "red", aes(weight = w)) + 
+  geom_ribbon(data=bootsic,aes(ymin=yhatl2,ymax=yhatu2), alpha=0.1, fill = "steelblue2")+
   # Arreglando el eje x
   scale_x_continuous(n.breaks=10, limits=c(18,87)) + 
   # Arreglando el eje y
@@ -264,19 +265,64 @@ peakage=50
 predict(modelo1, list(X = peakage), interval = "c")
 
 #Con bootstrap v1
-n<-nrow(modelo1$model)
-B <- 10000
-pred <- numeric(B)
-for (i in 1:B) {
-  boot <- sample(n, n, replace = TRUE)
-  fit.b <- lm("y ~ x + I(x^2)", data = datap2[boot,])
-  pred[i] <- predict(fit.b, list(X = 50)) + sample(resid(fit.b), size = 1)
+set.seed(428)
+library(boot)
+
+#define function to calculate R-squared
+coef_function <- function(formula, data, indices) {
+  d <- data[indices,] #allows boot to select sample
+  fit <-coef(lm(y ~ x + I(x^2), data = d,  weights = w))
+  #fit regression model
+  return(fit) 
 }
-quantile(pred, c(0.025, 0.975))
-var(fit.b$fitted.values)
+#perform bootstrapping with 2000 replications
+reps <- boot(data=datap2, statistic=coef_function, R=2000, formula=y ~ x + I(x^2), weights = w)
+#Usar errores estandares para estimar los intervalos de confianza
+boots <- data.frame(x)
+boots$x2 <-boots$x^2
 
+seI=apply(reps$t,2,sd)[1]
+seX=apply(reps$t,2,sd)[2]
+seX2=apply(reps$t,2,sd)[3]
 
-#Con bootstrap v2
+I=apply(reps$t,2,mean)[1]
+x=apply(reps$t,2,mean)[2]
+x2=apply(reps$t,2,mean)[3]
+
+I=reps$t0[1]
+x=reps$t0[2]
+x2=reps$t0[3]
+
+bIl=(I-seI*1.96)
+bxl=(x-seX*1.96)
+bx2l=(x2-seX2*1.96)
+
+bIu=(I+seI*1.96)
+bxu=(x+seX*1.96)
+bx2u=(x2+seX2*1.96)
+
+yhatl=bIl+bxl*boots$x+bx2l*boots$x2
+yhatu=bIu+bxu*boots$x+bx2u*boots$x2
+
+bootsic <- cbind(boots,yhatl,yhatu)
+
+#Con bootstrap v3
+
+lboundsi= boot.ci(reps,type="basic",index=1)$basic[4]
+uboundsi=boot.ci(reps,type="basic",index=1)$basic[5]
+
+lboundsx= boot.ci(reps,type="basic",index=2)$basic[4]
+uboundsx=boot.ci(reps,type="basic",index=2)$basic[5]
+
+lboundsx2= boot.ci(reps,type="basic",index=3)$basic[4]
+uboundsx2=boot.ci(reps,type="basic",index=3)$basic[5]
+
+yhatl2=lboundsi+lboundsx*boots$x+lboundsx2*boots$x2
+yhatu2=uboundsi+uboundsx*boots$x+uboundsx2*boots$x2
+
+bootsic <- cbind(bootsic,yhatl2,yhatu2)
+
+#Con bootstrap v3
 n<-nrow(modelo1$model)
 B <- 10000
 pred <- numeric(B)
@@ -301,6 +347,7 @@ boots <- data.frame(yhatbt, lowerbt,upperbt)
 names(boots) <- c("fit", "lwr", "upr")
 
 icbt <- rbind(matriz,boots)
+
 
 
 
