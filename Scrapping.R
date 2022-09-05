@@ -547,41 +547,60 @@ stargazer(modelo3c,modelo4c)
 set.seed(1)
 
 #use 70% of dataset as training set and 30% as test set
-sample <- sample(c(TRUE, FALSE), nrow(datap1), replace=TRUE, prob=c(0.7,0.3))
-train  <- datap1[sample, ]
-test   <- datap1[!sample, ]
+sample <- sample(c(TRUE, FALSE), nrow(datap3c), replace=TRUE, prob=c(0.7,0.3))
+train  <- datap3c[sample, ]
+test   <- datap3c[!sample, ]
 
 #Punto b-Formato general
 
 #Se crea una tabla vacía para almacenar los resultados
-N=12
+N=10
 modelos <- numeric(N)
 pred <- numeric(N)
-
 rmsemodelos <- data.frame(modelos, pred)
 names(rmsemodelos) <- c("modelo", "rmse")
 
+modelo1 <- lm("y ~ age+I(age^2)", data=train, weights= train$w)
+test$modelo1<-predict(modelo1,newdata = test)
+rmse<-with(test,sqrt(mean((y-modelo1)^2)))
+rmsemodelos[1,] <- c(1,rmse)
 
-modelo2 <- lm("y1 ~ female", data=train, weights= train$fweight)
+modelo2 <- lm("y ~ female", data=train, weights= train$w)
 test$modelo2<-predict(modelo2,newdata = test)
-rmse<-with(test,sqrt(mean((y1-modelo2)^2)))
+rmse<-with(test,sqrt(mean((y-modelo2)^2)))
 rmsemodelos[2,] <- c(2,rmse)
 
-modelo3 <- lm("y1 ~age+I(age^2)+female+(age+I(age^2)):female", data=train, weights= train$fweight)
+modelo3 <- lm("y ~age+I(age^2)+female+(age+I(age^2)):female", data=train, weights= train$w)
 test$modelo3<-predict(modelo3,newdata = test)
-rmse<-with(test,sqrt(mean((y1-modelo3)^2)))
+rmse<-with(test,sqrt(mean((y-modelo3)^2)))
 rmsemodelos[3,] <- c(3,rmse)
 
-modelo4 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
+modelo4 <- lm("y ~ -1+.-w", data=train, weights= train$w)
 test$modelo4<-predict(modelo4,newdata = test)
-rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
+rmse<-with(test,sqrt(mean((y-modelo4)^2)))
 rmsemodelos[4,] <- c(4,rmse)
 
+#Versión FWL
+modelo4b<-lm("y~ -1+.-tenure-w",data=train, weights=w)
+modelo4c <-lm("tenure~.-w-y",data=train, weights=w)
 
-modelo5 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
-test$modelo4<-predict(modelo4,newdata = test)
-rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
-rmsemodelos[4,] <- c(4,rmse)
+res_y_a=modelo4b$residuals
+res_s_a=modelo4c$residuals
+
+train<-cbind(train,res_y_a,res_s_a)
+
+modelo4b<-lm("y~ -1+.-tenure-w",data=test, weights=w)
+modelo4c <-lm("tenure~.-w-y",data=test, weights=w)
+
+res_y_a=modelo4b$residuals
+res_s_a=modelo4c$residuals
+
+test<-cbind(test,res_y_a,res_s_a)
+
+modelo5 <- lm("res_y_a~res_s_a-1", data=train, weights= w)
+test$modelo5<-predict(modelo5,newdata = test)
+rmse<-with(test,sqrt(mean((res_y_a-modelo5)^2)))
+rmsemodelos[5,] <- c(5,rmse)
 
 modelo6 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
 test$modelo4<-predict(modelo4,newdata = test)
@@ -609,15 +628,6 @@ test$modelo4<-predict(modelo4,newdata = test)
 rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
 rmsemodelos[4,] <- c(4,rmse)
 
-modelo11 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
-test$modelo4<-predict(modelo4,newdata = test)
-rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
-rmsemodelos[4,] <- c(4,rmse)
-
-modelo12 <- lm("y1~ -1+.-tenure-w", data=train, weights= train$fweight)
-test$modelo4<-predict(modelo4,newdata = test)
-rmse<-with(test,sqrt(mean((y1-modelo4)^2)))
-rmsemodelos[4,] <- c(4,rmse)
 
 #Punto b
 
@@ -638,6 +648,4 @@ modelo1<-train(y~z,
                data = datos_heih,
                trControl = ctrl,
                method = "null")
-
-
 
